@@ -11,7 +11,7 @@ import MidiEditor from './components/MidiEditor'; // ★ Mockから本物へ変�
 export default function MusicApp() {
   return (
     <BrowserRouter>
-      <div className="h-full w-full bg-black flex justify-center items-center overflow-hidden font-sans select-none relative">
+      <div className="h-full w-full bg-black flex justify-center items-center overflow-hidden font-sans select-none relative pt-[env(safe-area-inset-top)]">
         <div className="w-full max-w-[430px] h-full bg-gray-950 shadow-2xl relative text-white overflow-hidden sm:h-[90vh] sm:rounded-2xl sm:border sm:border-gray-800">
           
           <Routes>
