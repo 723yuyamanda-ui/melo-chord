@@ -14,6 +14,7 @@
     "pitchfinder": "^2.3.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1",
     "tone": "^15.1.22"
   },
   "devDependencies": {

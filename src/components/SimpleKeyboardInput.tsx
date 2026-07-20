@@ -1,0 +1,447 @@
+// src/components/SimpleKeyboardInput.tsx
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Sparkles, Trash2, Play, Square, Disc, Music, Save, FolderHeart, X, Edit2, Check } from 'lucide-react';
+import { NoteData, SavedMelodyItem } from '../types';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { getNoteNameFromMidi } from '../constants/music';
+import * as Tone from 'tone';
+
+const SLIDABLE_PIANO_KEYS = [
+  { label: 'ド', octave: 3, offset: 0, type: '低', hasBlack: true,  bLabel: 'ド#', bOffset: 1 },
+  { label: 'レ', octave: 3, offset: 2, type: '低', hasBlack: true,  bLabel: 'レ#', bOffset: 3 },
+  { label: 'ミ', octave: 3, offset: 4, type: '低', hasBlack: false },
+  { label: 'ファ', octave: 3, offset: 5, type: '低', hasBlack: true,  bLabel: 'ファ#', bOffset: 6 },
+  { label: 'ソ', octave: 3, offset: 7, type: '低', hasBlack: true,  bLabel: 'ソ#', bOffset: 8 },
+  { label: 'ラ', octave: 3, offset: 9, type: '低', hasBlack: true,  bLabel: 'ラ#', bOffset: 10 },
+  { label: 'シ', octave: 3, offset: 11, type: '低', hasBlack: false },
+
+  { label: 'ド', octave: 4, offset: 0, type: '主', hasBlack: true,  bLabel: 'ド#', bOffset: 1 },
+  { label: 'レ', octave: 4, offset: 2, type: '主', hasBlack: true,  bLabel: 'レ#', bOffset: 3 },
+  { label: 'ミ', octave: 4, offset: 4, type: '主', hasBlack: false },
+  { label: 'ファ', octave: 4, offset: 5, type: '主', hasBlack: true,  bLabel: 'ファ#', bOffset: 6 },
+  { label: 'ソ', octave: 4, offset: 7, type: '主', hasBlack: true,  bLabel: 'ソ#', bOffset: 8 },
+  { label: 'ラ', octave: 4, offset: 9, type: '主', hasBlack: true,  bLabel: 'ラ#', bOffset: 10 },
+  { label: 'シ', octave: 4, offset: 11, type: '主', hasBlack: false },
+
+  { label: 'ド', octave: 5, offset: 0, type: '高', hasBlack: true,  bLabel: 'ド#', bOffset: 1 },
+  { label: 'レ', octave: 5, offset: 2, type: '高', hasBlack: true,  bLabel: 'レ#', bOffset: 3 },
+  { label: 'ミ', octave: 5, offset: 4, type: '高', hasBlack: false },
+  { label: 'ファ', octave: 5, offset: 5, type: '高', hasBlack: true,  bLabel: 'ファ#', bOffset: 6 },
+  { label: 'ソ', octave: 5, offset: 7, type: '高', hasBlack: true,  bLabel: 'ソ#', bOffset: 8 },
+  { label: 'ラ', octave: 5, offset: 9, type: '高', hasBlack: true,  bLabel: 'ラ#', bOffset: 10 },
+  { label: 'シ', octave: 5, offset: 11, type: '高', hasBlack: false },
+  
+  { label: 'ド', octave: 6, offset: 0, type: '高', hasBlack: false }
+];
+
+const convertMidiToDoremi = (midi: number): string => {
+  if (midi === 0) return 'ー';
+  const noteNames = ['ド', 'ド#', 'レ', 'レ#', 'ミ', 'ファ', 'ファ#', 'ソ', 'ソ#', 'ラ', 'ラ#', 'シ'];
+  const octaveNum = Math.floor(midi / 12) - 1;
+  let prefix = '';
+  if (octaveNum === 3) prefix = '低';
+  if (octaveNum === 5) prefix = '高';
+  if (octaveNum === 6) prefix = '最高';
+  return `${prefix}${noteNames[midi % 12]}`;
+};
+
+export default function SimpleKeyboardInput() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const { playSingleNote, startMelodyPreview, stopPlayback, isPlaying, initAudio, isReady, isLoading } = useAudioPlayer();
+  
+  const [melodyGrid, setMelodyGrid] = useState<NoteData[]>(() => location.state?.melodyGrid || []);
+  
+  const hasPickupNotes = React.useMemo(() => {
+    return melodyGrid.some(note => note.col < 16 && note.midiNote !== 0);
+  }, [melodyGrid]);
+
+  const [startBarSelection, setStartBarSelection] = useState<number>(() => hasPickupNotes ? 0 : 16);
+  const [currentStep, setCurrentStep] = useState<number>(() => {
+    if (melodyGrid.length === 0) return 16; 
+    const lastNote = melodyGrid.reduce((max, note) => note.col > max.col ? note : max, melodyGrid[0]);
+    return Math.min(144, lastNote.col + lastNote.duration);
+  });
+
+  const [bpm, setBpm] = useState<number>(() => location.state?.bpm || 110);
+  const [activePlayStep, setActivePlayStep] = useState<number | null>(null);
+  const [isRecordMode, setIsRecordMode] = useState<boolean>(true); 
+
+  const [currentMelodyId, setCurrentMelodyId] = useState<string | null>(() => location.state?.currentMelodyId || null);
+  const [savedMelodies, setSavedMelodies] = useState<SavedMelodyItem[]>([]);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isListOpen, setIsListOpen] = useState(false);
+  const [inputName, setInputName] = useState('');
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+  
+  const monitorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const localData = localStorage.getItem('easyComposer_saved_melodies');
+    if (localData) {
+      try { setSavedMelodies(JSON.parse(localData)); } catch (e) { console.error(e); }
+    }
+    if (!isReady && !isLoading) initAudio();
+    return () => { stopPlayback(); };
+  }, [isReady, isLoading]);
+
+  useEffect(() => {
+    setStartBarSelection(hasPickupNotes ? 0 : 16);
+  }, [hasPickupNotes]);
+
+  useEffect(() => {
+    if (monitorRef.current) {
+      const targetStep = isPlaying && activePlayStep !== null ? activePlayStep : currentStep;
+      const scrollPosition = (targetStep / 2) * (44 + 4); 
+      const containerWidth = monitorRef.current.clientWidth;
+      
+      monitorRef.current.scrollTo({
+        left: scrollPosition - (containerWidth / 2) + 22,
+        behavior: 'smooth'
+      });
+    }
+  }, [currentStep, activePlayStep, isPlaying]);
+
+  const handleTimelineGridClick = (targetStep: number) => {
+    if (isPlaying) return;
+    setCurrentStep(targetStep);
+    showToast(`✏️ 入力位置を移動: ${targetStep < 16 ? 'Pickup' : `${Math.floor((targetStep-16)/16)+1}小節目`}`);
+  };
+
+  const handleInputNote = async (offset: number, keyOctave: number) => {
+    if (isPlaying) return;
+    if (Tone.context.state !== 'running') {
+      await Tone.start();
+      await Tone.context.resume();
+    }
+    const midiNote = (keyOctave + 1) * 12 + offset;
+    await playSingleNote(getNoteNameFromMidi(midiNote));
+    if (!isRecordMode) return;
+    if (currentStep >= 144) return;
+
+    setMelodyGrid(prev => {
+      const filtered = prev.filter(n => n.col !== currentStep);
+      return [...filtered, { midiNote, col: currentStep, duration: 2 }].sort((a,b) => a.col - b.col);
+    });
+    setCurrentStep(prev => prev + 2);
+  };
+
+  const handleRest = () => {
+    if (currentStep >= 144 || isPlaying || !isRecordMode) return;
+    setMelodyGrid(prev => {
+      const filtered = prev.filter(n => n.col !== currentStep);
+      return [...filtered, { midiNote: 0, col: currentStep, duration: 2 }].sort((a,b) => a.col - b.col);
+    });
+    setCurrentStep(prev => prev + 2);
+  };
+
+  const handleClearLast = () => {
+    if (isPlaying || melodyGrid.length === 0) return;
+    const target = melodyGrid.filter(n => n.col < currentStep).pop() || melodyGrid[melodyGrid.length - 1];
+    setMelodyGrid(prev => prev.filter(n => n.col !== target.col));
+    setCurrentStep(target.col);
+  };
+
+  // ★ テンポトグル循環ロジックに「160」を追加した4段階アップデート
+  const toggleBpm = () => {
+    setBpm(prev => {
+      if (prev === 85) return 110;
+      if (prev === 110) return 135;
+      if (prev === 135) return 160;
+      return 85;
+    });
+  };
+
+  const handleTogglePreview = async () => {
+    if (Tone.context.state !== 'running') {
+      await Tone.start();
+      await Tone.context.resume();
+    }
+    if (isPlaying) { stopPlayback(); setActivePlayStep(null); } 
+    else { await startMelodyPreview(melodyGrid, 144, bpm, (step) => { setActivePlayStep(step); }, startBarSelection); }
+  };
+
+  const executeSave = (type: 'overwrite' | 'new') => {
+    const nameToSave = inputName.trim().slice(0, 10) || `メロディ #${savedMelodies.length + 1}`;
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    let nextList = [...savedMelodies];
+    if (type === 'overwrite' && currentMelodyId) {
+      nextList = nextList.map(item => item.id === currentMelodyId ? { ...item, title: nameToSave, melodyGrid, bpm, savedAt: formattedDate } : item);
+      showToast(`💾 「${nameToSave}」を上書き保存しました`);
+    } else {
+      const newId = `melo-${Date.now()}`;
+      const newItem: SavedMelodyItem = { id: newId, title: nameToSave, melodyGrid, bpm, savedAt: formattedDate };
+      nextList = [newItem, ...nextList];
+      setCurrentMelodyId(newId);
+      showToast(`💾 「${nameToSave}」を新規保存しました`);
+    }
+
+    setSavedMelodies(nextList);
+    localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(nextList));
+    setIsSaveModalOpen(false);
+  };
+
+  const handleLoadMelody = (item: SavedMelodyItem) => {
+    stopPlayback();
+    const grid = item.melodyGrid;
+    setMelodyGrid(grid);
+    setCurrentMelodyId(item.id);
+    if (item.bpm) setBpm(item.bpm);
+    const lastNote = grid.reduce((max, note) => note.col > max.col ? note : max, grid[0] || { col: 16, duration: 2 });
+    setCurrentStep(grid.length === 0 ? 16 : Math.min(144, lastNote.col + lastNote.duration));
+    setIsListOpen(false);
+    showToast(`📂 「${item.title}」を展開しました`);
+  };
+
+  const handleStartRename = (id: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation(); setEditingItemId(id); setEditingName(currentTitle);
+  };
+
+  const handleSaveRename = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const cleanName = editingName.trim().slice(0, 10) || "無題";
+    const nextList = savedMelodies.map(item => item.id === id ? { ...item, title: cleanName } : item);
+    setSavedMelodies(nextList);
+    localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(nextList));
+    setEditingItemId(null);
+  };
+
+  const handleDeleteMelody = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextList = savedMelodies.filter(item => item.id !== id);
+    if (currentMelodyId === id) setCurrentMelodyId(null);
+    setSavedMelodies(nextList);
+    localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(nextList));
+  };
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+
+  return (
+    <div className="h-full w-full flex flex-col bg-gray-950 text-white select-none relative overflow-hidden px-4">
+      {toast && <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[110] bg-teal-500 border border-teal-400 text-gray-950 px-5 py-2.5 rounded-full font-black text-xs shadow-2xl animate-in fade-in zoom-in-95 duration-150">{toast}</div>}
+
+      {/* ヘッダーエリア */}
+      <div className="border-b border-gray-900 flex items-center justify-between py-2 shrink-0">
+        <button onClick={() => { stopPlayback(); navigate('/'); }} className="text-gray-400 hover:text-white"><ArrowLeft size={18} /></button>
+        <span className="font-bold text-sm tracking-tight">自由なドレミ入力</span>
+        
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => { if (melodyGrid.length === 0) { showToast("⚠️ メロディが空です"); return; } setInputName(savedMelodies.find(m => m.id === currentMelodyId)?.title || `メロディ #${savedMelodies.length + 1}`); setIsSaveModalOpen(true); }} 
+            className="flex flex-col items-center justify-center gap-0.5 text-blue-400 active:scale-95 transition-transform"
+          >
+            <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl"><Save size={13} /></div>
+            <span className="text-[8px] font-black tracking-tighter">保存</span>
+          </button>
+          
+          <button 
+            onClick={() => setIsListOpen(true)} 
+            className="flex flex-col items-center justify-center gap-0.5 text-teal-400 active:scale-95 transition-transform relative"
+          >
+            <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl"><FolderHeart size={13} /></div>
+            <span className="text-[8px] font-black tracking-tighter">一覧</span>
+            {savedMelodies.length > 0 && <span className="absolute top-[-2px] right-[-2px] bg-red-500 rounded-full text-[7px] text-white font-black px-1 min-w-[11px] h-2.5 flex items-center justify-center border border-gray-950 shadow-md">{savedMelodies.length}</span>}
+          </button>
+        </div>
+      </div>
+      
+      {/* メインレイアウト */}
+      <div className="flex-1 flex flex-col justify-start gap-3 overflow-hidden pt-2">
+        
+        {/* タイムラインカード */}
+        <div className="w-full bg-gray-900 border border-gray-800 p-3 rounded-xl h-[142px] flex flex-col relative shrink-0">
+          <div className="flex justify-between items-center mb-1">
+            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider truncate max-w-[140px]">
+              {currentMelodyId ? `📝 ${savedMelodies.find(m=>m.id===currentMelodyId)?.title}` : 'メロディタイムライン'}
+            </div>
+            
+            <div className="flex items-center gap-2 bg-gray-950 p-1 px-2 rounded-lg border border-gray-800 z-10">
+              <span className="text-[9px] font-black text-gray-500 uppercase">開始位置:</span>
+              <select value={startBarSelection} onChange={(e) => setStartBarSelection(Number(e.target.value))} className="bg-gray-900 text-teal-400 font-mono font-black text-xs py-0.5 px-1 focus:outline-none cursor-pointer rounded">
+                <option value={0} disabled={!hasPickupNotes}>Pickup {hasPickupNotes ? '✓' : '(空)'}</option>
+                <option value={16}>1小節</option>
+                <option value={48}>3小節</option>
+                <option value={80}>5小節</option>
+                <option value={112}>7小節</option>
+              </select>
+              <button onClick={handleTogglePreview} disabled={melodyGrid.length === 0} className="px-3 py-1 rounded-md bg-blue-600 text-white text-[10px] font-black flex items-center gap-1 active:scale-95 transition-transform shadow-md">
+                {isPlaying ? <Square size={8} fill="currentColor"/> : <Play size={8} fill="currentColor"/>}
+                <span>{isPlaying ? '止める' : '再生'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div ref={monitorRef} className="flex-1 flex items-center gap-1 overflow-x-auto w-full px-1 scrollbar-none relative scroll-smooth pt-6 pb-1">
+            {Array.from({ length: 72 }).map((_, i) => {
+              const stepCol = i * 2;
+              const found = melodyGrid.find(n => n.col === stepCol);
+              const isNowPlaying = stepCol === activePlayStep && isPlaying;
+              const isSelectedStep = stepCol === currentStep && isRecordMode;
+              
+              const isPickupArea = stepCol < 16;
+              const isMeasureStart = stepCol % 16 === 0;
+              const barDisplayNum = isPickupArea ? 0 : Math.floor((stepCol - 16) / 16) + 1;
+
+              return (
+                <div key={i} className={`flex-shrink-0 relative ${isMeasureStart ? 'ml-2 border-l-2 border-dashed border-gray-700 pl-1' : ''}`}>
+                  {isMeasureStart && (
+                    <span className={`absolute -top-5.5 left-1 text-[8px] font-mono font-bold tracking-tight whitespace-nowrap ${isPickupArea ? 'text-purple-400' : 'text-gray-400'}`}>
+                      {isPickupArea ? 'Pickup' : `${barDisplayNum}小節`}
+                    </span>
+                  )}
+                  <div 
+                    onClick={() => handleTimelineGridClick(stepCol)}
+                    className={`w-11 h-11 rounded-lg flex items-center justify-center font-black text-[14px] leading-tight cursor-pointer transition-all duration-100 ${
+                    isNowPlaying 
+                      ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-black scale-105 ring-4 ring-amber-400/50 shadow-[0_0_20px_rgba(245,158,11,0.8)] z-20' 
+                      : isSelectedStep 
+                        ? 'bg-gray-950 border-2 border-dashed border-teal-400 text-teal-400 shadow-[0_0_8px_rgba(20,184,166,0.3)]' 
+                        : found 
+                          ? (found.midiNote === 0 
+                            ? 'bg-gray-800 border border-dashed border-gray-600 text-gray-500 text-xs' 
+                            : isPickupArea 
+                              ? 'bg-purple-600/30 border border-purple-500/40 text-purple-300' 
+                              : 'bg-blue-600/30 border border-blue-500/40 text-blue-300') 
+                          : isPickupArea 
+                            ? 'bg-purple-950/20 border border-purple-900/20 text-gray-800 hover:border-purple-500/30' 
+                            : 'bg-gray-950 border border-gray-900 text-gray-800 hover:border-gray-700'
+                  }`}>
+                    {found ? convertMidiToDoremi(found.midiNote) : (isSelectedStep ? '✏️' : 'ー')}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* コントロールバー */}
+        <div className="w-full shrink-0 flex items-center justify-between p-2.5 bg-gray-900 border border-gray-800 rounded-xl gap-2.5 shadow-xl">
+          <div className="flex bg-gray-950 p-1 rounded-xl border border-gray-800/60 max-w-[190px] flex-1">
+            <button onClick={() => setIsRecordMode(false)} className={`flex-1 py-2 rounded-lg text-[11px] font-black flex items-center justify-center gap-1 transition-all ${!isRecordMode ? 'bg-gray-800 text-teal-400 shadow-sm' : 'text-gray-500'}`}>
+              <span>🔈 練習</span>
+            </button>
+            <button onClick={() => setIsRecordMode(true)} className={`flex-1 py-2 rounded-lg text-[11px] font-black flex items-center justify-center gap-1 transition-all ${isRecordMode ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md' : 'text-gray-500'}`}>
+              <span>⏺ 入力</span>
+            </button>
+          </div>
+
+          {/* ★ 4速対応のテンポトグル（160の際も文字サイズが崩れない最小幅設計） */}
+          <button 
+            onClick={toggleBpm} 
+            className="px-3 py-2 bg-gray-950 hover:bg-gray-950/80 border border-gray-800 text-xs font-mono font-black text-yellow-400 rounded-xl min-w-[72px] h-[38px] flex items-center justify-center gap-1.5 transition-colors active:scale-95 shadow-md"
+          >
+            <span>🕒 {bpm}</span>
+          </button>
+
+          <div className="flex items-center gap-1.5 flex-1 justify-end">
+            <button onClick={handleRest} disabled={isPlaying || currentStep >= 144 || !isRecordMode} className="px-3 py-2 bg-gray-950 hover:bg-gray-800 text-gray-300 disabled:opacity-20 rounded-xl border border-gray-800 font-black text-[11px] h-[38px] flex items-center gap-1 transition-all active:scale-95 shrink-0 shadow-md">
+              <span>⏳ 休符</span>
+            </button>
+            <button onClick={handleClearLast} disabled={isPlaying || melodyGrid.length === 0} className="px-3 py-2 bg-gray-950 hover:bg-red-950/40 text-red-400 disabled:opacity-20 rounded-xl border border-gray-800 font-black text-[11px] h-[38px] flex items-center gap-1 transition-all active:scale-95 shrink-0 shadow-md">
+              <Trash2 size={12} />
+              <span>消去</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 鍵盤コンテナ */}
+        <div className="flex-1 flex flex-col justify-center my-1 select-none">
+          <div ref={(el) => { if (el && el.scrollLeft === 0) el.scrollLeft = 448; }} className="w-full relative h-[166px] bg-gray-950 flex overflow-x-auto rounded-xl border border-gray-800 scrollbar-none px-2 shadow-2xl">
+            <div className="flex relative h-full" style={{ width: '1408px' }}>
+              {SLIDABLE_PIANO_KEYS.map((key, index) => (
+                <div key={index} className="w-[64px] h-full relative shrink-0">
+                  <button onClick={() => handleInputNote(key.offset, key.octave)} disabled={isPlaying} className="w-full h-[96%] bg-gray-100 hover:bg-white active:bg-blue-100 border-r border-gray-300 rounded-b-xl flex flex-col items-center justify-end pb-5 text-gray-950 font-black text-xs border-t-4 border-blue-400/40 shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                    <span className={`text-[7px] font-mono mb-0.5 ${key.type === '主' ? 'text-teal-500 font-bold' : 'text-gray-400'}`}>{key.type === '主' ? '真ん中' : key.type === '低' ? '低音' : '高音'}</span>{key.label}
+                  </button>
+                  {key.hasBlack && (
+                    <button onClick={() => handleInputNote(key.bOffset!, key.octave)} disabled={isPlaying} className="absolute top-0 right-[-16px] w-[32px] h-[55%] bg-gray-900 hover:bg-gray-800 active:bg-blue-600 rounded-b-lg text-white font-bold text-[9px] flex items-end justify-center pb-2 border border-black z-10 shadow-md">{key.bLabel}</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 最下部ディグボタン */}
+        <div className="shrink-0 mb-4">
+          <button 
+            onClick={() => { stopPlayback(); navigate('/suggest', { state: { melodyGrid, currentMelodyId, bpm, manualTranspose: location.state?.manualTranspose, complexity: location.state?.complexity, playingId: location.state?.playingId } }); }} 
+            disabled={melodyGrid.length === 0 || isPlaying} 
+            className="w-full py-4.5 h-14 bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 disabled:from-gray-900 disabled:to-gray-900 disabled:text-gray-700 rounded-xl font-black text-sm flex items-center justify-center gap-2 text-white shadow-[0_0_25px_rgba(20,184,166,0.25)] transition-all active:scale-[0.99]"
+          >
+            <Sparkles size={15} />
+            <span>AIキー判定 ➔ コード進行をディグる ({melodyGrid.length}音)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 保存モーダル */}
+      {isSaveModalOpen && (
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 w-full max-w-xs flex flex-col gap-4">
+            <h4 className="text-sm font-black text-white flex items-center gap-1.5"><Save size={16} className="text-blue-400" />メロディを資産保存</h4>
+            <input type="text" value={inputName} onChange={(e) => setInputName(e.target.value.slice(0, 10))} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs font-bold text-white text-center focus:outline-none focus:border-blue-500" />
+            <div className="flex flex-col gap-2">
+              {currentMelodyId ? (
+                <>
+                  <button onClick={() => executeSave('overwrite')} className="w-full py-2.5 bg-blue-600 text-xs font-black rounded-xl text-white">✨ 上書き保存</button>
+                  <button onClick={() => executeSave('new')} className="w-full py-2.5 bg-gray-800 text-xs font-bold rounded-xl text-gray-300 border border-gray-700">別名で新しく保存</button>
+                </>
+              ) : (
+                <button onClick={() => executeSave('new')} className="w-full py-2.5 bg-blue-600 text-xs font-black rounded-xl text-white">💾 保存する</button>
+              )}
+              <button onClick={() => setIsSaveModalOpen(false)} className="w-full py-2 text-gray-500 text-[10px] font-bold mt-1">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 一覧モーダル */}
+      {isListOpen && (
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-[100] flex flex-col animate-in fade-in duration-200">
+          <div className="w-full max-w-[430px] h-[85vh] mt-auto mx-auto bg-gray-900 border-t border-gray-800 rounded-t-3xl p-5 flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-800 shrink-0">
+              <div className="flex items-center gap-2 text-teal-400"><FolderHeart size={18} /><h3 className="font-black text-sm tracking-tight text-white">保存したメロディ資産 ({savedMelodies.length})</h3></div>
+              <button onClick={() => setIsListOpen(false)} className="w-7 h-7 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white"><X size={14} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto py-3 flex flex-col gap-2.5 scrollbar-none">
+              {savedMelodies.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500"><Music size={40} className="text-gray-700 mb-2" /><p className="text-xs font-bold">保存された資産がありません</p></div>
+              ) : (
+                savedMelodies.map((item) => (
+                  <div key={item.id} onClick={() => handleLoadMelody(item)} className={`p-3 bg-gray-950 border rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${currentMelodyId === item.id ? 'border-teal-500/50' : 'border-gray-800/80'}`}>
+                    <div className="flex-1 flex flex-col gap-1 overflow-hidden">
+                      {editingItemId === item.id ? (
+                        <div className="flex items-center gap-1.5 py-0.5" onClick={(e)=>e.stopPropagation()}>
+                          <input type="text" value={editingName} onChange={(e)=>setEditingName(e.target.value.slice(0,10))} className="bg-gray-900 border border-teal-500 rounded px-2 py-0.5 text-xs text-white max-w-[140px] focus:outline-none" />
+                          <button onClick={(e)=>handleSaveRename(item.id, e)} className="p-1 bg-teal-600 rounded text-white"><Check size={10}/></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 max-w-full">
+                          <h4 className="text-sm font-black text-gray-100 truncate">{item.title}</h4>
+                          <button onClick={(e)=>handleStartRename(item.id, item.title, e)} className="p-1 text-gray-500 hover:text-teal-400 transition-colors"><Edit2 size={10}/></button>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium">
+                        <span>音符数: {item.melodyGrid.filter(n=>n.midiNote!==0).length}音</span>
+                        <span>•</span>
+                        <span className="text-teal-400 font-bold font-mono">BPM {item.bpm || 110}</span>
+                      </div>
+                    </div>
+                    <button onClick={(e) => handleDeleteMelody(item.id, e)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-900 border border-gray-800 text-gray-500 hover:text-red-400 shrink-0"><Trash2 size={14} /></button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

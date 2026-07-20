@@ -4,8 +4,30 @@
     <meta charset="UTF-8" />
     <!-- ★ スマホのズーム禁止と、ブラウザのメニュー領域を正確に計算する設定 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Easy Composer</title>
+    <title>MeloChord</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MeloChord" />
+  <link rel="apple-touch-icon" href="/icon-512.png" />
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- SEO / OGP メタタグ -->
+  <title>MeloChord | メロディからコード進行をAI自動提案</title>
+  <meta name="description" content="鼻歌や簡単なドレミ入力から、AIが最適なコード進行を25パターン自動提案。あなたの作曲を劇的にサポートするWebアプリ。" />
+  
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MeloChord | メロディからコード進行をAI自動提案" />
+  <meta property="og:description" content="ドレミを選ぶだけで、AIがエモいコード進行を自動生成！" />
+  <meta property="og:site_name" content="" />
+  <!-- ※Vercelデプロイ後に確定URL（例: https://easy-composer.vercel.app/ogp.png）へ書き換えてください -->
+  <meta property="og:image" content="/ogp.png" /> 
+  <meta name="twitter:card" content="summary_large_image" />
+
+
   </head>
   <!-- ★ 画面を完全に固定し、下に引っ張った時の「ビヨーン」というスクロールを防止 -->
   <body class="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-gray-950 overscroll-none">
