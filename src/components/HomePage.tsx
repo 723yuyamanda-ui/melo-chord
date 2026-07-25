@@ -1,71 +1,99 @@
 // src/components/HomePage.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FolderHeart, Music, Play, Trash2, X, Edit2, Check, HelpCircle, MessageSquare } from 'lucide-react';
+import { Plus, FolderHeart, Music, Play, Trash2, X, Edit2, Check, HelpCircle, MessageSquare, Sparkles, Bell, ArrowRight } from 'lucide-react';
 import { SavedMelodyItem } from '../types';
+import { NEWS_ITEMS } from '../constants/news';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [isListOpen, setIsListOpen] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(false); // 使い方ガイドの開閉
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isNewsOpen, setIsNewsOpen] = useState(false);
+  
   const [savedMelodies, setSavedMelodies] = useState<SavedMelodyItem[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
-  // ローカルストレージから保存されたメロディ一覧を読み込む[cite: 2]
+  // 未読のメジャーアップデートがあるかの判定用
+  const latestMajorNews = NEWS_ITEMS.find(item => item.isMajor);
+
   useEffect(() => {
     const localData = localStorage.getItem('easyComposer_saved_melodies');
     if (localData) {
-      try { setSavedMelodies(JSON.parse(localData)); } catch (e) { console.error(e); } //[cite: 2]
+      try { setSavedMelodies(JSON.parse(localData)); } catch (e) { console.error(e); }
     }
 
-    // ★ 初回訪問時のみ自動で使い方ガイドを開くロジック
+    // 初回訪問ガイド判定
     const hasVisited = localStorage.getItem('easyComposer_has_visited');
     if (!hasVisited) {
       setIsGuideOpen(true);
       localStorage.setItem('easyComposer_has_visited', 'true');
+    } else {
+      // 訪問済みの場合、未読のメジャーアップデートがあれば初回ポップアップ
+      const lastSeenId = localStorage.getItem('easyComposer_last_seen_news_id');
+      if (latestMajorNews && lastSeenId !== latestMajorNews.id) {
+        setIsNewsOpen(true);
+      }
     }
-  }, [isListOpen]); // モーダルが開くたびに最新状態を同期[cite: 2]
+  }, [isListOpen]);
 
-  // 保存したメロディをロードして直接「進行ハンティング」画面へジャンプする処理[cite: 2]
+  const handleCloseNewsModal = () => {
+    if (latestMajorNews) {
+      localStorage.setItem('easyComposer_last_seen_news_id', latestMajorNews.id);
+    }
+    setIsNewsOpen(false);
+  };
+
   const handleLoadMelody = (item: SavedMelodyItem) => {
-    setIsListOpen(false); //[cite: 2]
-    navigate('/suggest', {  //[cite: 2]
-      state: {  //[cite: 2]
-        melodyGrid: item.melodyGrid,  //[cite: 2]
-        currentMelodyId: item.id,  //[cite: 2]
-        bpm: item.bpm || 110  //[cite: 2]
-      }  //[cite: 2]
-    }); //[cite: 2]
+    setIsListOpen(false);
+    navigate('/suggest', {
+      state: {
+        melodyGrid: item.melodyGrid,
+        currentMelodyId: item.id,
+        bpm: item.bpm || 110,
+        bars: 4
+      }
+    });
   };
 
   const handleStartRename = (id: string, currentTitle: string, e: React.MouseEvent) => {
-    e.stopPropagation(); //[cite: 2]
-    setEditingItemId(id); //[cite: 2]
-    setEditingName(currentTitle); //[cite: 2]
+    e.stopPropagation(); setEditingItemId(id); setEditingName(currentTitle);
   };
 
   const handleSaveRename = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); //[cite: 2]
-    const cleanName = editingName.trim().slice(0, 10) || "無題"; //[cite: 2]
-    const nextList = savedMelodies.map(item => item.id === id ? { ...item, title: cleanName } : item); //[cite: 2]
-    setSavedMelodies(nextList); //[cite: 2]
-    localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(nextList)); //[cite: 2]
-    setEditingItemId(null); //[cite: 2]
+    e.stopPropagation();
+    const cleanName = editingName.trim().slice(0, 10) || "無題";
+    const nextList = savedMelodies.map(item => item.id === id ? { ...item, title: cleanName } : item);
+    setSavedMelodies(nextList);
+    localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(nextList));
+    setEditingItemId(null);
   };
 
   const handleDeleteMelody = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); //[cite: 2]
-    const nextList = savedMelodies.filter(item => item.id !== id); //[cite: 2]
-    setSavedMelodies(nextList); //[cite: 2]
-    localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(nextList)); //[cite: 2]
+    e.stopPropagation();
+    const nextList = savedMelodies.filter(item => item.id !== id);
+    setSavedMelodies(nextList);
+    localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(nextList));
   };
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-gray-950 via-gray-950 to-indigo-950/30 text-white flex flex-col items-center justify-center p-6 select-none relative overflow-hidden">
       
-      {/* ─── 右上のサポート・フィードバックUI ─── */}
-      <div className="absolute top-4 right-4 flex items-center gap-3 z-50">
+      {/* ─── 右上のサポート・お知らせUI ─── */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
+        {/* お知らせボタン */}
+        <button 
+          onClick={() => setIsNewsOpen(true)}
+          className="p-2 bg-gray-900/80 border border-gray-800 rounded-xl text-gray-300 hover:text-white transition-all flex items-center gap-1 text-xs font-bold relative"
+        >
+          <Bell size={15} className="text-amber-400" />
+          <span>お知らせ</span>
+          {latestMajorNews && localStorage.getItem('easyComposer_last_seen_news_id') !== latestMajorNews.id && (
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />
+          )}
+        </button>
+
         <button 
           onClick={() => setIsGuideOpen(true)}
           className="p-2 bg-gray-900/80 border border-gray-800 rounded-xl text-gray-300 hover:text-white transition-all flex items-center gap-1 text-xs font-bold"
@@ -74,9 +102,8 @@ export default function HomePage() {
           <span>使い方</span>
         </button>
         
-        {/* フィードバック用外部リンク */}
         <a 
-          href="https://forms.gle/AD5RBqjKNUmbkw2z6" // ※実際のフォームURL等へ差し替えてください
+          href="https://forms.gle/AD5RBqjKNUmbkw2z6" 
           target="_blank" 
           rel="noopener noreferrer"
           className="p-2 bg-gray-900/80 border border-gray-800 rounded-xl text-gray-300 hover:text-white transition-all flex items-center gap-1 text-xs font-bold"
@@ -87,12 +114,12 @@ export default function HomePage() {
       </div>
 
       {/* ─── メインロゴ・キャッチコピー ─── */}
-      <div className="text-center flex flex-col gap-3 mb-12 animate-in fade-in zoom-in-95 duration-300">
+      <div className="text-center flex flex-col gap-3 mb-10 animate-in fade-in zoom-in-95 duration-300">
         <h1 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-teal-400 to-purple-400 italic">
           Melo Chord
           <span className="text-base ml-1 font-bold not-italic inline-block align-middle">
             (ベータ版)
-        </span>
+          </span>
         </h1>
         <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">
           メロディから<br />コード進行を提案
@@ -103,10 +130,18 @@ export default function HomePage() {
       <div className="w-full max-w-xs flex flex-col gap-3.5 z-10">
         <button 
           onClick={() => navigate('/keyboard')} 
-          className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/10"
+          className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20"
         >
-          <Plus size={16} strokeWidth={3} />
-          <span>新しく作る</span>
+          <Plus size={18} strokeWidth={3} />
+          <span>新しく作る（鍵盤入力）</span>
+        </button>
+
+        <button 
+          onClick={() => navigate('/preset-list')} 
+          className="w-full py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-teal-600/20 text-white"
+        >
+          <Sparkles size={18} />
+          <span>デモ曲で試す</span>
         </button>
 
         <button 
@@ -114,15 +149,72 @@ export default function HomePage() {
           className="w-full py-4 bg-gray-900/80 hover:bg-gray-800/80 border border-gray-800 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
         >
           <FolderHeart size={16} className="text-teal-400" />
-          <span>保存した曲</span>
+          <span>保存した曲 ({savedMelodies.length})</span>
         </button>
       </div>
 
-      {/* ─── 使い方ガイドモーダル（ポップアップ） ─── */}
+      {/* ─── お知らせモーダル（最新1〜3件表示） ─── */}
+      {isNewsOpen && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-[120] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-[390px] bg-gray-900 border border-gray-800 rounded-3xl p-5 flex flex-col shadow-2xl relative max-h-[85vh]">
+            <button 
+              onClick={handleCloseNewsModal} 
+              className="absolute top-4 right-4 w-7 h-7 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white"
+            >
+              <X size={14} />
+            </button>
+
+            <div className="flex items-center gap-2 mb-4">
+              <Bell size={18} className="text-amber-400" />
+              <h3 className="font-black text-base text-white">お知らせ・アップデート情報</h3>
+            </div>
+
+            {/* お知らせリスト（最新3件） */}
+            <div className="flex-1 overflow-y-auto flex flex-col gap-3 scrollbar-none my-1 pr-1">
+              {NEWS_ITEMS.slice(0, 3).map((item) => (
+                <div key={item.id} className="p-3 bg-gray-950 border border-gray-800 rounded-2xl flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold text-gray-500">{item.date}</span>
+                    {item.isMajor && (
+                      <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full">
+                        MAJOR UPDATE
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-xs font-black text-white leading-snug">{item.title}</h4>
+                  <p className="text-[11px] text-gray-400 leading-relaxed font-medium">{item.summary}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* LP誘導リンク */}
+            <div className="pt-3 border-t border-gray-800/80 flex flex-col gap-2 mt-2">
+              <button 
+                onClick={() => {
+                  handleCloseNewsModal();
+                  navigate('/landing');
+                }}
+                className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 rounded-xl font-black text-xs text-gray-950 flex items-center justify-center gap-1.5 shadow-lg transition-all active:scale-[0.98]"
+              >
+                <span>公式ノート</span>
+                <ArrowRight size={14} />
+              </button>
+
+              <button 
+                onClick={handleCloseNewsModal}
+                className="w-full py-2 text-gray-500 hover:text-gray-300 text-[11px] font-bold text-center"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── 使い方ガイドモーダル ─── */}
       {isGuideOpen && (
         <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-[380px] bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col shadow-2xl relative">
-            
             <button 
               onClick={() => setIsGuideOpen(false)} 
               className="absolute top-4 right-4 w-7 h-7 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white"
@@ -171,7 +263,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ─── 保存した曲一覧モーダル（既存） ─── */}
+      {/* ─── 保存した曲一覧モーダル ─── */}
       {isListOpen && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-[100] flex flex-col animate-in fade-in duration-200">
           <div className="w-full max-w-[430px] h-[85vh] mt-auto mx-auto bg-gray-900 border-t border-gray-800 rounded-t-3xl p-5 flex flex-col shadow-2xl">
@@ -207,7 +299,6 @@ export default function HomePage() {
                       ) : (
                         <div className="flex items-center gap-1.5 max-w-full">
                           <h4 className="text-sm font-black text-gray-100 truncate">{item.title}</h4>
-                          
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
@@ -217,7 +308,6 @@ export default function HomePage() {
                           >
                             <Edit2 size={9}/>鍵盤で修正
                           </button>
-
                           <button onClick={(e) => handleStartRename(item.id, item.title, e)} className="p-1 text-gray-500 hover:text-teal-400 transition-colors"><Edit2 size={10}/></button>
                         </div>
                       )}

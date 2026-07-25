@@ -14,7 +14,7 @@ export const ALL_NOTES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
 export const CHORD_TYPES: Record<string, number[]> = {
   '': [0, 4, 7], 'm': [0, 3, 7], 'sus4': [0, 5, 7], 'add9': [0, 4, 7, 14],
-  'M7': [0, 4, 7, 11], 'm7': [0, 3, 7, 10], '7': [0, 4, 7, 10]
+  'M7': [0, 4, 7, 11], 'm7': [0, 3, 7, 10], '7': [0, 4, 7, 10], 'dim': [0, 3, 6], 'm6': [0, 3, 7, 9]
 };
 
 export const getNoteIndex = (noteName: string) => ALL_NOTES.indexOf(noteName.replace(/\d/g, ''));
@@ -25,7 +25,7 @@ export const resetVoicingCache = () => {
   lastRightHandMidiAverage = null;
 };
 
-export const getChordNotes = (chordName: string, baseOctave: number = 3) => { // ★デフォルトを4から【3】に引き下げ肉厚化
+export const getChordNotes = (chordName: string, baseOctave: number = 3) => {
   if (chordName === '-' || !chordName) return null;
   const [chord, slash] = chordName.split('/');
   let root = chord[1] === '#' || chord[1] === 'b' ? chord.slice(0, 2) : chord.slice(0, 1);
@@ -33,11 +33,11 @@ export const getChordNotes = (chordName: string, baseOctave: number = 3) => { //
 
   const rootIndex = getNoteIndex(root);
   const intervals = CHORD_TYPES[type] || CHORD_TYPES[''];
-  
-  // ─── 左手（ベース） ───
+
+  // ─── 左手（ベース：スラッシュ指定音を最優先低音として配置） ───
   const bassNoteName = slash ? slash : root;
   const bassIdx = getNoteIndex(bassNoteName);
-  const bassNote = `${ALL_NOTES[bassIdx]}2`;
+  const bassNote = `${ALL_NOTES[bassIdx]}2`; // 最低音ルート
   const lhNotes = [bassNote];
 
   if (!slash && !type.includes('dim') && !type.includes('m7b5')) {
@@ -46,9 +46,9 @@ export const getChordNotes = (chordName: string, baseOctave: number = 3) => { //
     lhNotes.push(`${ALL_NOTES[p5Idx]}${p5Oct}`);
   }
 
-  // ─── 右手（インテリジェント・スムーズボイシング） ───
+  // ─── 右手（インテリジェント・スムーズボイシング：特等席帯域 MIDI 48〜68） ───
   const inversionCandidates: string[][] = [];
-  
+
   for (let shift = -1; shift <= 1; shift++) {
     const currentPattern = intervals.map(interval => {
       const noteIdx = (rootIndex + interval) % 12;
@@ -67,26 +67,25 @@ export const getChordNotes = (chordName: string, baseOctave: number = 3) => { //
       const m = note.match(/([A-Z]#?)(\d)/);
       if (!m) return note;
       let targetOct = parseInt(m[2]);
-      // ★ 解決：ピアノ・ギター音源アセットが一番美しくピッチ変換できる【MIDI 48〜68】の特等席帯域へ和音をアジャスト
-      if (avgMidiCheck < 48) targetOct++;  
-      if (avgMidiCheck > 68) targetOct--;  
+      if (avgMidiCheck < 48) targetOct++;
+      if (avgMidiCheck > 68) targetOct--;
       return `${m[1]}${targetOct}`;
     });
 
     inversionCandidates.push(adjustedPattern);
   }
 
-  let bestPattern = inversionCandidates[1]; 
+  let bestPattern = inversionCandidates[1];
   if (lastRightHandMidiAverage !== null) {
     let minDistance = 999;
-    
+
     inversionCandidates.forEach(candidate => {
       const avgMidi = candidate.reduce((sum, note) => {
         const m = note.match(/([A-Z]#?)(\d)/);
         if (!m) return sum;
         return sum + (parseInt(m[2]) + 1) * 12 + ALL_NOTES.indexOf(m[1]);
       }, 0) / candidate.length;
-      
+
       const dist = Math.abs(avgMidi - lastRightHandMidiAverage!);
       if (dist < minDistance) {
         minDistance = dist;
@@ -100,7 +99,7 @@ export const getChordNotes = (chordName: string, baseOctave: number = 3) => { //
     if (!m) return sum;
     return sum + (parseInt(m[2]) + 1) * 12 + ALL_NOTES.indexOf(m[1]);
   }, 0) / bestPattern.length;
-  
+
   lastRightHandMidiAverage = finalAvgMidi;
 
   bestPattern.sort((a, b) => {
@@ -112,7 +111,7 @@ export const getChordNotes = (chordName: string, baseOctave: number = 3) => { //
     return aMidi - bMidi;
   });
 
-  const notes = Array.from(new Set([...lhNotes, ...bestPattern])); 
+  const notes = Array.from(new Set([...lhNotes, ...bestPattern]));
   return { notes, bassNote, rootIndex };
 };
 

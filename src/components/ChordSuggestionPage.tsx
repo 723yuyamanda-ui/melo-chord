@@ -1,33 +1,34 @@
 // src/components/ChordSuggestionPage.tsx
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowLeft, ChevronDown, Music, Undo2, Minus, Plus, FolderHeart, Trash2, X, Save, Edit2, Check, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Sparkles, ArrowLeft, ChevronDown, Music, Minus, Plus, FolderHeart, Trash2, X, Save, Edit2, Check, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { generateAndScoreChords, ScoredChordResult } from '../lib/chordEngine';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { NoteData, SavedMelodyItem } from '../types';
+import * as Tone from 'tone';
 
 import ChordCard from './ChordCard';
 
-const GENRES = [
+const CATEGORIES = [
   { key: 'all', label: '全部みる' },
-  { key: 'pop', label: '👑 王道・J-POP' },
-  { key: 'positive', label: '☀️ ポジティブ' },
-  { key: 'emotional', label: '🌃 切ない・エモ' },
-  { key: 'anime', label: '✨ アニソン劇的' },
-  { key: 'urban', label: '🍸 アーバンお洒落' }
+  { key: 'Chorus', label: '👑 サビ：感動' },
+  { key: 'Verse', label: '📖 A/Bメロ：語り' },
+  { key: 'Chill', label: '🍸 Chill：洗練' }
 ];
 
 export default function ChordSuggestionPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const { startSyncPlayback, stopPlayback, isPlaying, setDynamicDetune, isMelodyMuted, setIsMelodyMuted } = useAudioPlayer();
+
+  const bars: number = location.state?.bars || 4;
+  const maxStep = bars === 4 ? 80 : 144;
 
   const [playingId, setPlayingId] = useState<string | null>(() => location.state?.playingId || null);
   const [manualTranspose, setManualTranspose] = useState<number>(() => location.state?.manualTranspose || 0);
-  const [complexity, setComplexity] = useState<'Simple' | 'Standard' | 'Rich'>(() => location.state?.complexity || 'Standard');
 
-  const [selectedGenre, setSelectedGenre] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getInitialGrid = (): NoteData[] => {
@@ -68,10 +69,10 @@ export default function ChordSuggestionPage() {
     }
   }, [isListOpen, isSaveModalOpen]);
 
-  const { detectedKeyName, currentKeyName, allScoredSuggestions } = useMemo(() => {
+  const { currentKeyName, allScoredSuggestions } = useMemo(() => {
     const adjustedGridForEngine = melodyGrid
       .filter(n => n.col >= 16)
-      .map(n => ({ ...n, col: n.col - 16 })); 
+      .map(n => ({ ...n, col: n.col - 16 }));
 
     const result = generateAndScoreChords(adjustedGridForEngine, manualTranspose);
     return {
@@ -91,12 +92,12 @@ export default function ChordSuggestionPage() {
 
   const visibleSuggestions = useMemo(() => {
     let result = [...allScoredSuggestions];
-    if (selectedGenre !== 'all') {
-      return result.filter(item => item.genre === selectedGenre);
+    if (selectedCategory !== 'all') {
+      return result.filter(item => item.category === selectedCategory);
     } else {
       return isExpanded ? result : result.slice(0, 12);
     }
-  }, [allScoredSuggestions, selectedGenre, isExpanded]);
+  }, [allScoredSuggestions, selectedCategory, isExpanded]);
 
   const currentActivePattern = useMemo(() => {
     if (!playingId) return null;
@@ -110,13 +111,13 @@ export default function ChordSuggestionPage() {
       setPlayback16th(startBarSelection);
     } else {
       setPlayingId(id);
-      const targetChords = resultItem.chordsMap[complexity];
+      const targetChords = resultItem.chordsMap.Standard;
       const safeStartStep = hasPickupNotes ? startBarSelection : 16;
-      
+
       await startSyncPlayback(transposedMelodyGrid, targetChords, (current16th) => {
         setPlayback16th(current16th);
-      }, manualTranspose, bpm, safeStartStep);
-      
+      }, manualTranspose, bpm, safeStartStep, maxStep);
+
       setDynamicDetune(manualTranspose);
     }
   };
@@ -161,7 +162,7 @@ export default function ChordSuggestionPage() {
     setMelodyGrid(grid);
     setCurrentMelodyId(item.id);
     if (item.bpm) setBpm(item.bpm);
-    
+
     setIsListOpen(false);
     showToast(`📂 「${item.title}」を読み込みました！`);
   };
@@ -199,24 +200,41 @@ export default function ChordSuggestionPage() {
     });
   };
 
-  // ★ 進行ハンティング画面用：4速トグル循環＆安全な再生リセットロジック
+  // ★ シームレスBPM変更（再生を止めずにリアルタイム変更）
   const toggleBpm = () => {
-    if (isPlaying) {
-      stopPlayback();
-      setPlayingId(null);
-      setPlayback16th(startBarSelection);
-    }
     setBpm(prev => {
-      if (prev === 85) return 110;
-      if (prev === 110) return 135;
-      if (prev === 135) return 160;
-      return 85;
+      let nextBpm = 110;
+      if (prev === 85) nextBpm = 110;
+      else if (prev === 110) nextBpm = 135;
+      else if (prev === 135) nextBpm = 160;
+      else nextBpm = 85;
+
+      // 再生中であればTone.TransportのBPMを直接リアルタイム書き換え
+      if (isPlaying) {
+        Tone.Transport.bpm.value = nextBpm;
+      }
+      return nextBpm;
     });
     showToast("🕒 テンポを変更しました");
   };
 
-  const handleGenreChange = (genreKey: string) => {
-    stopPlayback(); setPlayingId(null); setPlayback16th(startBarSelection); setSelectedGenre(genreKey); setIsExpanded(false); 
+  // ★ シームレスカテゴリ変更（再生を止めずにタブ切り替え）
+  const handleCategoryChange = (categoryKey: string) => {
+    setSelectedCategory(categoryKey);
+    setIsExpanded(false);
+  };
+
+  const handleGoToEditor = () => {
+    stopPlayback();
+    navigate('/keyboard', { 
+      state: { 
+        melodyGrid, 
+        currentMelodyId, 
+        bpm, 
+        bars, 
+        manualTranspose 
+      } 
+    });
   };
 
   useEffect(() => { return () => { stopPlayback(); }; }, []);
@@ -227,11 +245,23 @@ export default function ChordSuggestionPage() {
 
       <div className="sticky top-0 bg-gray-950/95 backdrop-blur-md border-b border-gray-900 z-30 flex flex-col shrink-0">
         <header className="px-4 py-2 border-b border-gray-900/50 flex items-center justify-between">
-          <button onClick={() => { stopPlayback(); navigate('/keyboard', { state: { melodyGrid, currentMelodyId, bpm, manualTranspose, complexity } }); }} className="w-8 h-8 flex items-center justify-center bg-gray-900 rounded-full text-gray-400"><ArrowLeft size={16} /></button>
-          <div className="flex items-center gap-1.5">
-            <Sparkles size={14} className="text-teal-400" />
-            <span className="font-black text-xs bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-400">進行ハンティング</span>
+          <button onClick={() => { stopPlayback(); navigate('/'); }} className="w-8 h-8 flex items-center justify-center bg-gray-900 rounded-full text-gray-400 hover:text-white"><ArrowLeft size={16} /></button>
+          
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Sparkles size={14} className="text-teal-400" />
+              <span className="font-black text-xs bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-400">進行ハンティング</span>
+            </div>
+
+            <button 
+              onClick={handleGoToEditor}
+              className="px-2 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-700/80 rounded-lg text-teal-400 hover:text-teal-300 text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
+            >
+              <Edit2 size={11} />
+              <span>メロディ編集</span>
+            </button>
           </div>
+
           <div className="flex items-center gap-4">
             <button onClick={handleOpenSaveDialog} className="flex flex-col items-center justify-center gap-0.5 text-blue-400 active:scale-95 transition-transform">
               <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl"><Save size={13} /></div>
@@ -247,16 +277,19 @@ export default function ChordSuggestionPage() {
           </div>
         </header>
 
-        {/* 左右対称の大型「コントロールパネル」 */}
+        {/* ガイドバッジ */}
+        <div className="px-4 py-1.5 bg-gradient-to-r from-teal-950/60 to-blue-950/60 border-b border-teal-500/20 text-[10px] font-bold text-teal-300 text-center flex items-center justify-center gap-1.5 shrink-0">
+          <span>💡 気になるコード進行を選んで「試聴」を押してみよう！</span>
+        </div>
+
+        {/* 移調・BPM コントロールパネル */}
         <div className="px-4 pt-3 pb-3 border-b border-gray-900/50 flex items-center justify-between bg-gray-900/10 gap-3">
-          
-          {/* 左：大型化したチャンキー型キー移調パネル */}
           <div className="flex items-center gap-2 flex-1 max-w-[210px]">
             <Music size={12} className="text-gray-500 shrink-0" />
             <div className="flex items-center bg-gray-950 rounded-xl border border-gray-800/80 p-1 w-full h-11 justify-between shadow-inner">
-              <button 
-                onClick={() => handleKeyShift(-1)} 
-                disabled={manualTranspose <= -12} 
+              <button
+                onClick={() => handleKeyShift(-1)}
+                disabled={manualTranspose <= -12}
                 className="w-9 h-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 disabled:opacity-20 rounded-lg font-black text-sm flex items-center justify-center transition-colors active:scale-95 shadow-sm"
               >
                 <Minus size={13} />
@@ -264,9 +297,9 @@ export default function ChordSuggestionPage() {
               <span className="text-[15px] font-mono font-black text-teal-400 text-center flex-1">
                 {currentKeyName.replace(" Major", "")}
               </span>
-              <button 
-                onClick={() => handleKeyShift(1)} 
-                disabled={manualTranspose >= 12} 
+              <button
+                onClick={() => handleKeyShift(1)}
+                disabled={manualTranspose >= 12}
                 className="w-9 h-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 disabled:opacity-20 rounded-lg font-black text-sm flex items-center justify-center transition-colors active:scale-95 shadow-sm"
               >
                 <Plus size={13} />
@@ -274,75 +307,63 @@ export default function ChordSuggestionPage() {
             </div>
           </div>
 
-          {/* ★ 右：タップしてその場で変更できる、インタラクティブ・トグル型BPMパネルへ換装 */}
-          <button 
+          <button
             onClick={toggleBpm}
             className="flex items-center bg-gray-950 hover:bg-gray-900/60 px-3 rounded-xl border border-gray-800/80 h-11 min-w-[105px] justify-between shadow-md active:scale-95 transition-all"
           >
             <span className="text-[9px] font-mono font-black text-gray-500 tracking-wider uppercase">BPM</span>
             <span className="text-base font-mono font-black text-yellow-400 tracking-tight">{bpm}</span>
           </button>
-
         </div>
 
-        {/* ジャンル・属性セレクター */}
+        {/* カテゴリセレクター */}
         <div className="py-2.5 flex flex-col gap-2.5 bg-gray-950">
           <div className="flex gap-2 overflow-x-auto px-3 scrollbar-none">
-            {GENRES.map((genre) => (
-              <button 
-                key={genre.key} 
-                onClick={() => handleGenreChange(genre.key)} 
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => handleCategoryChange(cat.key)}
                 className={`whitespace-nowrap px-4 py-2 rounded-full text-[11px] font-black border transition-all active:scale-95 ${
-                  selectedGenre === genre.key 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-500 text-white shadow-md shadow-blue-600/10' 
+                  selectedCategory === cat.key
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-500 text-white shadow-md shadow-blue-600/10'
                     : 'bg-gray-900/60 border-gray-800 text-gray-400 hover:text-gray-200'
                 }`}
               >
-                {genre.label}
+                {cat.label}
               </button>
             ))}
           </div>
-          
-          <div className="px-3">
-            <div className="flex bg-gray-950 p-1 rounded-xl border border-gray-900 gap-1 shadow-inner">
-              {(['Simple', 'Standard', 'Rich'] as const).map((mode) => (
-                <button 
-                  key={mode} 
-                  onClick={() => setComplexity(mode)} 
-                  className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all active:scale-[0.99] ${
-                    complexity === mode 
-                      ? 'bg-gray-900 text-yellow-400 border border-gray-800/80 shadow-md shadow-black/40' 
-                      : 'text-gray-500 hover:text-gray-400'
-                  }`}
-                >
-                  {mode === 'Simple' ? '三和音' : mode === 'Standard' ? 'セブンス' : '豪華(オンコード)'}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
-      
+
       {/* メインリスト */}
       <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-2.5 pb-24 scrollbar-none">
         {visibleSuggestions.map((result) => {
-          const activeChords = result.chordsMap[complexity];
+          const activeChords = result.chordsMap.Standard;
           return (
-            <ChordCard 
-              key={result.templateId} 
-              pattern={{ id: result.templateId, title: result.title, genre: result.genreLabel, rawScore: result.score, tags: result.tags, description: '', chords: activeChords }} 
+            <ChordCard
+              key={result.templateId}
+              pattern={{
+                id: result.templateId,
+                title: result.title,
+                description: result.description,
+                categoryLabel: result.categoryLabel,
+                rawScore: result.score,
+                tags: result.tags,
+                chords: activeChords
+              }}
               isPlaying={playingId === result.templateId && isPlaying}
               onTogglePlay={() => handleToggleCardPlay(result.templateId, result)}
               currentKeyName={currentKeyName}
-              currentPlayback16th={playingId === result.templateId ? (playback16th < 16 ? -1 : playback16th - 16) : 0} 
-              startBarSelection={startBarSelection}
+              currentPlayback16th={playingId === result.templateId ? playback16th : 0}
+              bars={bars}
             />
           );
         })}
 
-        {selectedGenre === 'all' && !isExpanded && allScoredSuggestions.length > 12 && (
+        {selectedCategory === 'all' && !isExpanded && allScoredSuggestions.length > 12 && (
           <button onClick={() => setIsExpanded(true)} className="my-1 py-2.5 bg-gray-900/40 border border-gray-800/60 rounded-xl text-[10px] font-bold text-blue-400 flex items-center justify-center gap-1">
-            <span>残りの進行もすべて表示する（全25パターン）</span><ChevronDown size={12} />
+            <span>残りの進行もすべて表示する（全34パターン）</span><ChevronDown size={12} />
           </button>
         )}
       </div>
@@ -355,15 +376,21 @@ export default function ChordSuggestionPage() {
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-gray-950 shrink-0 ${isPlaying ? 'animate-pulse' : ''}`}><Music size={14} fill="currentColor" /></div>
               <div className="flex flex-col overflow-hidden">
                 <span className="text-[11px] font-black text-white truncate">{currentActivePattern.title}</span>
-                <span className="text-[8px] font-bold text-amber-400/80 tracking-wider truncate uppercase mt-0.5">{currentActivePattern.genreLabel}</span>
+                <span className="text-[8px] font-bold text-amber-400/80 tracking-wider truncate uppercase mt-0.5">{currentActivePattern.categoryLabel}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              <button onClick={handleGoToEditor} className="h-8 px-2 rounded-lg border border-gray-800 bg-gray-950 text-[9px] font-black text-teal-400 hover:text-teal-300 transition-all flex items-center gap-1">
+                <Edit2 size={11} />
+                <span>編集</span>
+              </button>
+
               <button onClick={() => setIsMelodyMuted(!isMelodyMuted)} className={`h-8 px-2 rounded-lg border text-[9px] font-black transition-all flex items-center gap-1 ${isMelodyMuted ? 'bg-red-950/30 border-red-900/40 text-red-400' : 'bg-gray-950 border-gray-800 text-teal-400'}`}>
                 {isMelodyMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
-                <span>{isMelodyMuted ? 'メロディOFF' : 'メロディON'}</span>
+                <span>{isMelodyMuted ? 'OFF' : 'ON'}</span>
               </button>
+              
               <button onClick={handleGlobalPlayerToggle} className={`w-9 h-9 rounded-full flex items-center justify-center text-gray-950 transition-all active:scale-95 ${isPlaying ? 'bg-amber-400' : 'bg-white'}`}>
                 {isPlaying ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" className="ml-0.5" />}
               </button>

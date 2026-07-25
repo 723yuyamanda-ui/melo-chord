@@ -1,4 +1,4 @@
-// src/App.tsx の更新
+// src/App.tsx
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
@@ -6,7 +6,8 @@ import HomePage from './components/HomePage';
 import InputSelectPage from './components/InputSelectPage';
 import SimpleKeyboardInput from './components/SimpleKeyboardInput';
 import ChordSuggestionPage from './components/ChordSuggestionPage';
-import MidiEditor from './components/MidiEditor'; // ★ Mockから本物へ変更
+import PresetListPage from './components/PresetListPage';
+import LandingPage from './components/LandingPage'; // ★ 新設
 
 export default function MusicApp() {
   return (
@@ -18,8 +19,9 @@ export default function MusicApp() {
             <Route path="/" element={<HomePage />} />
             <Route path="/input-select" element={<InputSelectPage />} />
             <Route path="/keyboard" element={<SimpleKeyboardInput />} />
+            <Route path="/preset-list" element={<PresetListPage />} />
             <Route path="/suggest" element={<ChordSuggestionPage />} />
-            <Route path="/editor" element={<MidiEditor />} /> {/* ★ 変更 */}
+            <Route path="/landing" element={<LandingPage />} /> {/* ★ 追加 */}
           </Routes>
 
         </div>

@@ -51,17 +51,14 @@ export function useAudioPlayer() {
       }).toDestination();
       globalReverbRef.current = reverb;
 
-      // 1. メロディサンプラーの生成
       const melodySampler = new Tone.Sampler({
         urls: { "C4": "C4.mp3", "C5": "C5.mp3", "C6": "C6.mp3" },
         baseUrl: "/samples/vibraphone/",
-        volume: -9
+        volume: -17
       }).connect(reverb);
-      // ★ 解決：型アサーション(as any)を噛ませて、TypeScriptのreadonly型エラーを100%完全粉砕
       (melodySampler as any).polyphony = 32; 
       melodySamplerRef.current = melodySampler;
 
-      // 2. ピアノサンプラーの生成
       const pianoSampler = new Tone.Sampler({
         urls: { "C3": "C3.mp3", "C4": "C4.mp3", "C5": "C5.mp3" },
         baseUrl: "/samples/piano/",
@@ -70,7 +67,6 @@ export function useAudioPlayer() {
       (pianoSampler as any).polyphony = 32; 
       pianoSamplerRef.current = pianoSampler;
 
-      // 3. ギターサンプラーの生成
       const guitarSampler = new Tone.Sampler({
         urls: { "C3": "C3.mp3", "C4": "C4.mp3", "C5": "C5.mp3" },
         baseUrl: "/samples/guitar/",
@@ -79,7 +75,6 @@ export function useAudioPlayer() {
       (guitarSampler as any).polyphony = 32; 
       guitarSamplerRef.current = guitarSampler;
 
-      // 4. ベースサンプラーの生成
       const bassSampler = new Tone.Sampler({
         urls: { "C2": "C2.mp3", "C3": "C3.mp3" },
         baseUrl: "/samples/bass/",
@@ -88,7 +83,6 @@ export function useAudioPlayer() {
       (bassSampler as any).polyphony = 12; 
       bassSamplerRef.current = bassSampler;
 
-      // 5. ドラムサンプラーの生成
       const drumSampler = new Tone.Sampler({
         urls: { "C1": "kick.mp3", "D1": "snare.mp3", "E1": "hihat.mp3" },
         baseUrl: "/samples/drums/",
@@ -120,7 +114,14 @@ export function useAudioPlayer() {
     }
   };
 
-  const startMelodyPreview = async (melodyGrid: NoteData[], maxStep: number, bpm: number, onStepChange: (step: number | null) => void, startStep: number = 0) => {
+  // ★ 改修: maxStep (4小節:80 / 8小節:144) による動的プレビュー制御
+  const startMelodyPreview = async (
+    melodyGrid: NoteData[], 
+    maxStep: number = 80, 
+    bpm: number = 110, 
+    onStepChange: (step: number | null) => void, 
+    startStep: number = 0
+  ) => {
     if (!isReady) await initAudio();
     stopPlayback();
     Tone.Transport.bpm.value = bpm;
@@ -128,7 +129,7 @@ export function useAudioPlayer() {
     let currentStep = startStep;
 
     activeLoopRef.current = new Tone.Loop((time) => {
-      if (currentStep >= 144 || currentStep >= maxStep) {
+      if (currentStep >= maxStep) {
         currentStep = startStep;
       }
       
@@ -152,13 +153,15 @@ export function useAudioPlayer() {
     setIsPlaying(true);
   };
 
+  // ★ 改修: maxStep (4小節:80 / 8小節:144) による動的同期演奏制御
   const startSyncPlayback = async (
     melodyGrid: NoteData[], 
     chordProgression: string[],
     onStepChange: (step: number) => void,
     initialTranspose: number = 0,
     bpm: number = 110,
-    startStep: number = 16
+    startStep: number = 16,
+    maxStep: number = 80
   ) => {
     if (!isReady) await initAudio();
     stopPlayback();
@@ -169,7 +172,7 @@ export function useAudioPlayer() {
     Tone.Transport.bpm.value = bpm;
 
     let currentStep = startStep;
-    const totalSteps = 144; 
+    const totalSteps = maxStep; 
     let lastValidChord = '';
 
     activeLoopRef.current = new Tone.Loop((time) => {
@@ -220,7 +223,6 @@ export function useAudioPlayer() {
 
           const chordData = getChordNotes(activeChord, 4);
           if (chordData) {
-            console.log(`【デバッグ】入力文字列: ${activeChord} -> 判定された構成音:`, chordData.notes);
             const rightHandNotes = chordData.notes.filter(n => n !== chordData.bassNote);
 
             if (current16th % 4 === 0) {
