@@ -4,6 +4,13 @@ import * as Tone from 'tone';
 import { NoteData } from '../types';
 import { getChordNotes, getNoteNameFromMidi, transposeString, resetVoicingCache } from '../constants/music';
 
+const ensureAudioContext = async () => {
+    if (Tone.context.state !== 'running') {
+      await Tone.start();
+      await Tone.context.resume();
+    }
+  };
+
 export function useAudioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);     
@@ -122,6 +129,7 @@ export function useAudioPlayer() {
     onStepChange: (step: number | null) => void, 
     startStep: number = 0
   ) => {
+    await ensureAudioContext();
     if (!isReady) await initAudio();
     stopPlayback();
     Tone.Transport.bpm.value = bpm;
@@ -163,6 +171,7 @@ export function useAudioPlayer() {
     startStep: number = 16,
     maxStep: number = 80
   ) => {
+    await ensureAudioContext();
     if (!isReady) await initAudio();
     stopPlayback();
     resetVoicingCache(); 

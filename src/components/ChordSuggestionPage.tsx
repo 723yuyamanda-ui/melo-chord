@@ -105,6 +105,12 @@ export default function ChordSuggestionPage() {
   }, [playingId, allScoredSuggestions]);
 
   const handleToggleCardPlay = async (id: string, resultItem: ScoredChordResult) => {
+
+    if (Tone.context.state !== 'running') {
+        await Tone.start();
+        await Tone.context.resume();
+      }
+
     if (playingId === id && isPlaying) {
       stopPlayback();
       setPlayingId(null);
