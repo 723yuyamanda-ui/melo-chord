@@ -205,8 +205,9 @@ export function useAudioPlayer() {
       if (!isMelodyMutedRef.current) {
         melodyGrid.forEach(note => {
           if (note.col === current16th && note.midiNote !== 0) {
-            let rawNote = getNoteNameFromMidi(note.midiNote);
-            if (delta !== 0) rawNote = transposeString(rawNote, delta);
+            // ★ 修正点: MIDI番号に対して直接 delta を足すことで絶対確実に正しい移調音を作る
+            const shiftedMidiNote = note.midiNote + delta;
+            const rawNote = getNoteNameFromMidi(shiftedMidiNote);
             
             if (rawNote && melodySamplerRef.current) {
               const mldTiming = time + getHumanizedOffset(4); 

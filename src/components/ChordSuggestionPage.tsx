@@ -120,7 +120,7 @@ export default function ChordSuggestionPage() {
       const targetChords = resultItem.chordsMap.Standard;
       const safeStartStep = hasPickupNotes ? startBarSelection : 16;
 
-      await startSyncPlayback(transposedMelodyGrid, targetChords, (current16th) => {
+      await startSyncPlayback(melodyGrid, targetChords, (current16th) => {
         setPlayback16th(current16th);
       }, manualTranspose, bpm, safeStartStep, maxStep);
 
