@@ -26,7 +26,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-canon-simple",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "原点にして頂点・ピュアカノン進行",
     description: "セブンスやオンコードを削ぎ落とした超王道カノン。圧倒的な素朴さと安心感。(C-G-Am-Em-F-C-F-G)",
     tags: ["ピュア", "超王道", "カノン", "アコースティック"],
@@ -36,7 +36,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-1-simple",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "シンプル4536進行 (トライアード)",
     description: "テンション感を抑えた純粋な三和音のみの4536。素朴でストレートなエモーショナルさ。",
     tags: ["シンプル", "ストレート", "4536"],
@@ -46,7 +46,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-1",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "J-POP最高峰 (4536セブンス進行)",
     description: "日本の音楽史を支える最強の進行。セブンスの切なさと込み上げる情熱を両立。",
     tags: ["王道", "涙腺崩壊", "サビ向け"],
@@ -55,7 +55,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-2",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "カノン進行（ベース降下型）",
     description: "ベースラインが階段を滑らかに降りていく、美しく圧倒的な安定感。",
     tags: ["感動", "伝統", "ドラマチック"],
@@ -64,7 +64,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-3",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "サブドミナントマイナー・涙の着地",
     description: "サビの終盤で4m(サブドミマイナー)が挟まり、胸がギュッと締め付けられる。",
     tags: ["切ない", "エモい", "サビ締め"],
@@ -73,7 +73,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-4-simple",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "ピュア小室リフレイン (6451三和音)",
     description: "三和音だけでドライブする疾走感。ロックやアコースティックに直球で響く。",
     tags: ["シンプル", "ロック", "疾走感"],
@@ -83,7 +83,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-4",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "小室リフレイン (6451セブンス)",
     description: "疾走感あふれるマイナー発進。90年代から受け継がれるキャッチーの極み。",
     tags: ["疾走感", "アニソン", "キャッチー"],
@@ -92,7 +92,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-5",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "パッシング・ディミニッシュ劇的進行",
     description: "4#dimが滑らかに音を繋ぎ、疾走感の中にプロの技術が光る高揚感。",
     tags: ["劇的", "プロ仕様", "J-ROCK"],
@@ -101,7 +101,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-6",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "スパークル・ポップ王道",
     description: "明るい光が差し込むような爽快感。ポップスの王道を突き抜ける展開。",
     tags: ["爽快", "明るい", "青春"],
@@ -110,7 +110,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-7",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "アニソン限界突破サビ",
     description: "キメと転調感が連続する、アニメ主題歌のクライマックス専用進行。",
     tags: ["熱い", "主題歌風", "限界突破"],
@@ -119,7 +119,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-8",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "ビクトリー・メジャーマーチ",
     description: "前向きなエネルギー全開。達成感と笑顔に包まれるメジャー進行。",
     tags: ["前進", "応援", "達成感"],
@@ -128,7 +128,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-9",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "ドラマチック・ロストラブ",
     description: "マイナーからメジャーへ浮き沈みし、失恋や哀愁を情感豊かに描く。",
     tags: ["バラード", "哀愁", "ドラマ"],
@@ -137,7 +137,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "cho-10",
     category: "Chorus",
-    categoryLabel: "👑 サビ：感動王道",
+    categoryLabel: "サビ：感動王道",
     title: "エターナル・ボンド (絆)",
     description: "サビの終盤で♭VII(b7)を踏み抜き、世界観が世界へ広がる壮大なスケール。",
     tags: ["壮大", "絆", "クライマックス"],
@@ -148,7 +148,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-1-simple",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "三和音ポップ・ステイ (C-F-G-C)",
     description: "最もシンプルで親しみやすい基本3和音循環。童謡やポップスの基本。",
     tags: ["超基本", "素朴", "弾き語り"],
@@ -158,7 +158,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-1",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "ポップ・ステイ・ループ (セブンス)",
     description: "1小節ずつゆったりとストーリーを紡ぐ、親しみやすく安定した進行。",
     tags: ["安定", "日常", "Aメロ向け"],
@@ -167,7 +167,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-2",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "トップ固定・クリシェライン",
     description: "メロディのトップ音を保ちつつ、ベースラインだけが静かに降下する優美さ。",
     tags: ["クリシェ", "オシャレ", "Bメロ向け"],
@@ -176,7 +176,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-3",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "グッドモーニング・アコースティック",
     description: "朝の光を浴びるような爽やかさ。アコギやピアノの語りに最適。",
     tags: ["爽やか", "アコースティック", "カフェ"],
@@ -185,7 +185,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-4",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "夕暮れのノスタルジー",
     description: "静かな哀愁から始まり、サビへの期待感をじんわりと高める展開。",
     tags: ["思い出", "夕暮れ", "ノスタルジー"],
@@ -194,7 +194,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-5",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "レイニー・イントロダクション",
     description: "ポツポツと降る雨のように静かな情緒。マイナーベースの美しい語り口。",
     tags: ["静寂", "雨", "ボカロ風"],
@@ -203,7 +203,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-6",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "サビ前クレッシェンド (Bメロ特化)",
     description: "サビに向かって緊張感を高め、最後の37(E7)で一気に破裂させる。",
     tags: ["ビルドアップ", "Bメロ特化", "高揚感"],
@@ -212,7 +212,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-7",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "下北沢サブカル・エモロック",
     description: "バンドサウンドにマッチする、少し歪んだ青春と切なさを帯びた進行。",
     tags: ["エモロック", "下北沢", "青春"],
@@ -221,7 +221,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-8",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "サンシャイン・ドライブ",
     description: "風を切って走るような開放感。明るくポジティブなメロディを引き立てる。",
     tags: ["ドライブ", "開放感", "爽快"],
@@ -230,7 +230,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-9",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "シンフォニック・アドベンチャー",
     description: "冒険の始まりを感じさせる広がり。壮大な物語の1ページ目。",
     tags: ["冒険", "RPG", "壮大"],
@@ -239,7 +239,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "ver-10",
     category: "Verse",
-    categoryLabel: "📖 A/Bメロ：ストーリー",
+    categoryLabel: "A/Bメロ：ストーリー",
     title: "ミッドナイト・ウォーク",
     description: "深夜の街を一人歩くような、静かで洗練されたコードアプローチ。",
     tags: ["深夜", "散歩", "静けさ"],
@@ -250,7 +250,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-1",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "丸サ進行 (Just the Two of Us)",
     description: "世界中で愛されるおしゃれ進行の最高峰。都会的な夜を彩る。",
     tags: ["シティポップ", "定番", "オシャレ"],
@@ -259,7 +259,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-2",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "夜の王道 2-5-1-6 (ツーファイブ)",
     description: "ジャズやR&Bの基本であり至高。スムーズで心地よい浮遊感に浸れる。",
     tags: ["ジャズ風", "R&B", "ナイトライフ"],
@@ -268,7 +268,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-3",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "ネオン・シティ・グルーヴ",
     description: "80年代シティポップのダンサブルでお洒落なテンション感。",
     tags: ["80s", "ダンサブル", "ネオン"],
@@ -277,7 +277,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-4",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "サブドミナント・チル・ループ",
     description: "17(セブン)から4M7へ滑らかに落ちる、カフェやLo-Fi Beatに最適な浮遊感。",
     tags: ["Lo-Fi", "チルホップ", "カフェ"],
@@ -286,7 +286,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-5",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "ベルベット・ナイト・R&B",
     description: "メロウで深い大人な響き。セカンダリードミナントが艶やかに響く。",
     tags: ["R&B", "メロウ", "深夜"],
@@ -295,7 +295,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-6",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "ミッドナイト・チルアウト",
     description: "リラックスしたテンポで深く沈み込める、アーバン・ラウンジ系コード。",
     tags: ["チルアウト", "ラウンジ", "リラックス"],
@@ -304,7 +304,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-7",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "オンベース・エレガント降下",
     description: "ベースラインが洗練された軌跡を描く、ピアノトリオ風のエレガントさ。",
     tags: ["エレガント", "ピアノ向け", "洗練"],
@@ -313,7 +313,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-8",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "ジャジー・ステップ",
     description: "ちょっと背伸びしたい夜に。複雑で豊かな響きが織りなす大人のコードステップ。",
     tags: ["ジャジー", "本格派", "バー"],
@@ -322,7 +322,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-9",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "ムーンライト・シネマ",
     description: "映画のワンシーンのようにドラマチックで静かな余韻を残すコード進行。",
     tags: ["シネマティック", "余韻", "幻想的"],
@@ -331,7 +331,7 @@ export const CHORD_TEMPLATES: ChordTemplate[] = [
   {
     id: "chl-10",
     category: "Chill",
-    categoryLabel: "🍸 Chill：アーバン洗練",
+    categoryLabel: "Chill：アーバン洗練",
     title: "アーバン・トワイライト",
     description: "黄昏時のグラデーション空を思わせる、甘く切ないハーモニーの連続。",
     tags: ["黄昏", "グラデーション", "甘い"],
@@ -426,7 +426,6 @@ export function convertDegreeToChord(
   let finalChord = rootName;
 
   if (isTriadOnly) {
-    // ★ トライアード指定時はセブンス(M7, m7, 7)を付けずピュアな「C」「Am」「G」にする
     if (chordExtension && chordExtension !== "7") {
       finalChord += chordExtension;
     } else if (isMinor) {
@@ -501,7 +500,6 @@ export function generateAndScoreChords(
   const suggestions = CHORD_TEMPLATES.map(template => {
     let score = 85;
 
-    // 4小節(8スロット)パターンの場合、自動でリピートして16スロットに補完拡張
     let fullDegrees = [...template.degrees];
     if (fullDegrees.length < 16) {
       while (fullDegrees.length < 16) {

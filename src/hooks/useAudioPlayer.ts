@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import * as Tone from 'tone';
 import { NoteData } from '../types';
-import { getChordNotes, getNoteNameFromMidi, transposeString, resetVoicingCache } from '../constants/music';
-
+// useAudioPlayer.ts の1行目付近
+import { getChordNotes, getGuitarChordNotes, getNoteNameFromMidi, transposeString, resetVoicingCache } from '../constants/music';
 const ensureAudioContext = async () => {
     if (Tone.context.state !== 'running') {
       await Tone.start();
@@ -51,51 +51,95 @@ export function useAudioPlayer() {
     try {
       await Tone.start();
 
-      const reverb = new Tone.Reverb({
-        decay: 1.6, 
-        preDelay: 0.01,
-        wet: 0.22
+      // ─── 1. イコライザー (EQ) とエフェクトの初期化 ───
+      
+      // ピアノ・ギター用EQ（中高域のセブンス音・テンションをくっきり立たせる）
+      const chordEQ = new Tone.EQ3({
+        low: -4,      // 低音のモワつきをカットし、ベースと分離
+        mid: +1.5,    // 中音域（コード構成音の核）をわずかに強調
+        high: +2.0    // 高音域のアタック感・透明感をプラス
       }).toDestination();
-      globalReverbRef.current = reverb;
 
+      // ベース用EQ（低音の太さを補強し、中高音の濁りをカット）
+      const bassEQ = new Tone.EQ3({
+        low: +2.5,    // オンコードなどのルート低音感を強調
+        mid: -2.0,    // ギターやピアノの帯域とのバッティングを抑える
+        high: -6.0    // 高音のノイズ感をカット
+      }).toDestination();
+
+      // メロディ（ビブラフォン）用EQ（クリアで耳に心地よい存在感）
+      const melodyEQ = new Tone.EQ3({
+        low: -2.0,
+        mid: +1.0,
+        high: +1.5
+      }).toDestination();
+
+      // リバーブ（余韻）
+      const reverb = new Tone.Reverb({ decay: 1.8, wet: 0.12 }).toDestination();
+
+
+      // ─── 2. 各サンプラーの接続と音量設定 ───
+
+      // メロディ（ビブラフォン）
       const melodySampler = new Tone.Sampler({
         urls: { "C4": "C4.mp3", "C5": "C5.mp3", "C6": "C6.mp3" },
         baseUrl: "/samples/vibraphone/",
-        volume: -14
-      }).connect(reverb);
-      (melodySampler as any).polyphony = 32; 
+        volume: -18 // メロディがしっかり聴こえる音量
+      }).connect(melodyEQ).connect(reverb);
       melodySamplerRef.current = melodySampler;
 
+      // ピアノ
       const pianoSampler = new Tone.Sampler({
-        urls: { "C3": "C3.mp3", "C4": "C4.mp3", "C5": "C5.mp3" },
+        urls: { 
+          "C3": "C3.mp3", "E3": "E3.mp3", "G3": "G3.mp3",
+          "C4": "C4.mp3", "E4": "E4.mp3", "G4": "G4.mp3",
+          "C5": "C5.mp3", "E5": "E5.mp3", "G5": "G5.mp3"
+        },
         baseUrl: "/samples/piano/",
-        volume: -10
-      }).connect(reverb);
-      (pianoSampler as any).polyphony = 32; 
+        volume: -20 // ピアノの音量調整
+      }).connect(chordEQ).connect(reverb);
+      (pianoSampler as any).polyphony = 32;
       pianoSamplerRef.current = pianoSampler;
 
+      
+
+      // ギター
       const guitarSampler = new Tone.Sampler({
-        urls: { "C3": "C3.mp3", "C4": "C4.mp3", "C5": "C5.mp3" },
+        urls: { 
+          "C3": "C3.mp3", "E3": "E3.mp3", "G3": "G3.mp3",
+          "C4": "C4.mp3", "E4": "E4.mp3", "G4": "G4.mp3",
+          "C5": "C5.mp3", "E5": "E5.mp3", "G5": "G5.mp3"
+        },
         baseUrl: "/samples/guitar/",
-        volume: -10
-      }).connect(reverb);
-      (guitarSampler as any).polyphony = 32; 
+        volume: -16 // アコギのストローク感が映える音量
+      }).connect(chordEQ).connect(reverb);
+      (guitarSampler as any).polyphony = 32;
       guitarSamplerRef.current = guitarSampler;
 
+      // ベース
       const bassSampler = new Tone.Sampler({
-        urls: { "C2": "C2.mp3", "C3": "C3.mp3" },
+        urls: { 
+          "C2": "C2.mp3", "E2": "E2.mp3", "G2": "G2.mp3",
+          "C3": "C3.mp3", "E3": "E3.mp3", "G3": "G3.mp3"
+        },
         baseUrl: "/samples/bass/",
-        volume: -20
-      }).toDestination().connect(reverb);
-      (bassSampler as any).polyphony = 12; 
+        volume: -22 // どっしり支える音量
+      }).connect(bassEQ);
+      (bassSampler as any).polyphony = 12;
       bassSamplerRef.current = bassSampler;
 
+      // ドラム
       const drumSampler = new Tone.Sampler({
-        urls: { "C1": "kick.mp3", "D1": "snare.mp3", "E1": "hihat.mp3" },
+        urls: {
+          "C1": "kick.mp3",   // kick.mp3 というファイルを "C1" という名前で登録
+          "D1": "snare.mp3",  // snare.mp3 というファイルを "D1" という名前で登録
+          "E1": "hihat.mp3"   // hihat.mp3 というファイルを "E1" という名前で登録
+        },
         baseUrl: "/samples/drums/",
-        volume: -15
-      }).toDestination(); 
-      (drumSampler as any).polyphony = 16; 
+        volume: -16
+      }).toDestination();
+      
+      (drumSampler as any).polyphony = 16;
       drumSamplerRef.current = drumSampler;
 
       await Tone.loaded();
@@ -232,35 +276,44 @@ export function useAudioPlayer() {
           if (delta !== 0) activeChord = transposeString(activeChord, delta);
 
           const chordData = getChordNotes(activeChord, 4);
+          const guitarChordData = getGuitarChordNotes(activeChord); // ★ 追加：ギター専用ボイシング取得
+
           if (chordData) {
             const rightHandNotes = chordData.notes.filter(n => n !== chordData.bassNote);
 
             if (current16th % 4 === 0) {
-              const pnoTiming = time + getHumanizedOffset(10);
-              const gtrTiming = time + 0.016 + getHumanizedOffset(12); 
+              const pnoTiming = time + getHumanizedOffset(8);
+              const gtrTiming = time + 0.012 + getHumanizedOffset(10); 
 
-              const humanizedRhNotes = rightHandNotes.map((_, idx) => {
-                const baseV = idx === 0 ? 0.80 : 0.70 - (idx * 0.04);
-                return getHumanizedVelocity(baseV, 0.08) * duckingMultiplier;
-              });
-
+              // ─── ピアノ：繊細なセブンス・高音部を中心に発声 ───
               if (pianoSamplerRef.current) {
                 rightHandNotes.forEach((note, idx) => {
-                  pianoSamplerRef.current!.triggerAttackRelease(note, "4n", pnoTiming, humanizedRhNotes[idx]);
+                  const baseV = idx === 0 ? 0.78 : 0.68 - (idx * 0.03);
+                  const pnoVel = getHumanizedVelocity(baseV, 0.06) * duckingMultiplier;
+                  pianoSamplerRef.current!.triggerAttackRelease(note, "4n", pnoTiming, pnoVel);
                 });
               }
-              if (guitarSamplerRef.current) {
-                rightHandNotes.forEach((note, idx) => {
-                  const stringStrumDelay = idx * 0.012; 
-                  guitarSamplerRef.current!.triggerAttackRelease(note, "4n", gtrTiming + stringStrumDelay, humanizedRhNotes[idx] * 0.85);
+
+              // ─── ギター：アコギらしいじゃらつき（ストローク）と広いボイシング ───
+              if (guitarSamplerRef.current && guitarChordData) {
+                guitarChordData.notes.forEach((note, idx) => {
+                  const stringStrumDelay = idx * 0.016; // ★ アコギのジャラ〜ンというストローク遅延
+                  const gtrVel = getHumanizedVelocity(0.72, 0.05) * duckingMultiplier;
+                  guitarSamplerRef.current!.triggerAttackRelease(
+                    note, 
+                    "4n", 
+                    gtrTiming + stringStrumDelay, 
+                    gtrVel
+                  );
                 });
               }
             }
 
+            // ─── ベース演奏 ───
             if ((current16th % 4 === 0 || current16th % 8 === 6) && bassSamplerRef.current) {
-              const bassTiming = time + getHumanizedOffset(8) - 0.003; 
+              const bassTiming = time + getHumanizedOffset(6) - 0.003; 
               const isDownBeat = current16th % 8 === 0;
-              const bassVel = getHumanizedVelocity(isDownBeat ? 0.80 : 0.60, 0.06); 
+              const bassVel = getHumanizedVelocity(isDownBeat ? 0.82 : 0.62, 0.05); 
               bassSamplerRef.current.triggerAttackRelease(chordData.bassNote, "8n", bassTiming, bassVel);
             }
           }
@@ -306,7 +359,38 @@ export function useAudioPlayer() {
   };
 
   useEffect(() => {
+    // 画面が非表示から復帰（タブ切り替えやアプリ復帰）した時の復帰処理
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        if (Tone.context.state !== 'running') {
+          try {
+            await Tone.start();
+            await Tone.context.resume();
+          } catch (e) {
+            console.error('AudioContext復帰に失敗しました:', e);
+          }
+        }
+      }
+    };
+
+    // iOS Safari等のスリープ解除・アプリ復帰に強力なイベント
+    const handlePageShow = async (event: PageTransitionEvent) => {
+      if (event.persisted || Tone.context.state !== 'running') {
+        try {
+          await Tone.start();
+          await Tone.context.resume();
+        } catch (e) {
+          console.error('PageShowによるAudioContext復帰失敗:', e);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+
     return () => { 
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
       Tone.Transport.stop(); 
     };
   }, []);

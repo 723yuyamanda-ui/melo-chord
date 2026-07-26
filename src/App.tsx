@@ -77,11 +77,11 @@ function LeftSidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-72 xl:w-80 h-full bg-gray-900/90 border-r border-gray-800/80 p-4 shrink-0 overflow-hidden">
-      <div className="flex items-center gap-2 pb-3 border-b border-gray-800 shrink-0 text-teal-400">
+    <aside className="hidden lg:flex flex-col w-72 xl:w-80 h-full bg-gray-900/60 backdrop-blur-2xl border-r border-white/10 p-4 shrink-0 overflow-hidden">
+      <div className="flex items-center gap-2 pb-3 border-b border-white/10 shrink-0 text-teal-400">
         <FolderHeart size={20} />
         <h3 className="font-black text-base tracking-tight text-white">保存したメロディ資産</h3>
-        <span className="ml-auto text-xs font-mono font-bold bg-teal-950 text-teal-400 px-2 py-0.5 rounded-full border border-teal-500/20">
+        <span className="ml-auto text-xs font-mono font-bold bg-teal-950/80 text-teal-400 px-2 py-0.5 rounded-full border border-teal-500/30">
           {savedMelodies.length}
         </span>
       </div>
@@ -91,7 +91,7 @@ function LeftSidebar() {
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500 gap-2">
             <Music size={36} className="text-gray-700" />
             <p className="text-xs font-bold">保存された資産がありません</p>
-            <p className="text-[11px] text-gray-600">鍵盤画面で作成したメロディを保存するとここに常時表示されます</p>
+            <p className="text-[11px] text-gray-500 leading-relaxed">鍵盤画面で作成したメロディを保存するとここに常時表示されます</p>
           </div>
         ) : (
           savedMelodies.map((item) => {
@@ -101,10 +101,10 @@ function LeftSidebar() {
               <div
                 key={item.id}
                 onClick={() => handleLoadMelody(item)}
-                className={`p-3.5 rounded-xl flex items-center justify-between gap-2 cursor-pointer transition-all group shadow-sm border ${
+                className={`p-3.5 rounded-2xl flex items-center justify-between gap-2 cursor-pointer transition-all group border ${
                   isActive
-                    ? 'bg-gradient-to-r from-teal-950/80 to-gray-950 border-teal-400/80 shadow-[0_0_15px_rgba(45,212,191,0.2)] scale-[1.02] z-10'
-                    : 'bg-gray-950/80 hover:bg-gray-950 border-gray-800 hover:border-teal-500/40'
+                    ? 'bg-gradient-to-r from-teal-950/80 to-gray-900/90 border-teal-400/80 shadow-[0_0_20px_rgba(45,212,191,0.25)] scale-[1.02] z-10'
+                    : 'bg-gray-950/60 hover:bg-gray-900/80 border-white/5 hover:border-teal-500/40 shadow-sm'
                 }`}
               >
                 <div className="flex-1 flex flex-col gap-1 overflow-hidden">
@@ -114,9 +114,9 @@ function LeftSidebar() {
                         type="text"
                         value={editingName}
                         onChange={(e)=>setEditingName(e.target.value.slice(0,10))}
-                        className="bg-gray-900 border border-teal-500 rounded px-2 py-0.5 text-xs text-white w-full focus:outline-none"
+                        className="bg-gray-900 border border-teal-500 rounded-lg px-2 py-0.5 text-xs text-white w-full focus:outline-none"
                       />
-                      <button onClick={(e)=>handleSaveRename(item.id, e)} className="p-1 bg-teal-600 rounded text-white shrink-0"><Check size={12}/></button>
+                      <button onClick={(e)=>handleSaveRename(item.id, e)} className="p-1 bg-teal-600 rounded-lg text-white shrink-0"><Check size={12}/></button>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
@@ -129,7 +129,7 @@ function LeftSidebar() {
                         </span>
                       )}
                       {!isActive && (
-                        <button onClick={(e) => handleStartRename(item.id, item.title, e)} className="p-1 text-gray-600 hover:text-teal-400 opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={12}/></button>
+                        <button onClick={(e) => handleStartRename(item.id, item.title, e)} className="p-1 text-gray-500 hover:text-teal-400 opacity-0 group-hover:opacity-100 transition-all"><Edit2 size={12}/></button>
                       )}
                     </div>
                   )}
@@ -143,10 +143,10 @@ function LeftSidebar() {
                 <div className="flex items-center gap-1 shrink-0" onClick={(e)=>e.stopPropagation()}>
                   <button
                     onClick={() => handleLoadMelody(item)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors ${
+                    className={`w-8 h-8 flex items-center justify-center rounded-xl border transition-colors ${
                       isActive 
                         ? 'bg-teal-500 text-gray-950 border-teal-400 shadow-md' 
-                        : 'bg-gray-900 border-gray-800 text-amber-400 hover:bg-gray-800'
+                        : 'bg-white/10 border-white/10 text-amber-400 hover:bg-white/20'
                     }`}
                     title="コード提案画面で聴く"
                   >
@@ -154,7 +154,7 @@ function LeftSidebar() {
                   </button>
                   <button
                     onClick={(e) => handleDeleteMelody(item.id, e)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-900 border border-gray-800 text-gray-600 hover:text-red-400 transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 border border-white/10 text-gray-500 hover:text-red-400 transition-colors"
                     title="削除"
                   >
                     <Trash2 size={12} />
@@ -174,8 +174,8 @@ function RightSidebar() {
   const navigate = useNavigate();
 
   return (
-    <aside className="hidden lg:flex flex-col w-80 xl:w-96 h-full bg-gray-900/90 border-l border-gray-800/80 p-4 shrink-0 overflow-y-auto scrollbar-none gap-5">
-      <div className="flex items-center justify-between pb-3 border-b border-gray-800 shrink-0">
+    <aside className="hidden lg:flex flex-col w-80 xl:w-96 h-full bg-gray-900/60 backdrop-blur-2xl border-l border-white/10 p-4 shrink-0 overflow-y-auto scrollbar-none gap-5">
+      <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-2">
           <BookOpen className="text-blue-400" size={20} />
           <h3 className="font-black text-base text-white">Melo Chord ガイド</h3>
@@ -188,21 +188,21 @@ function RightSidebar() {
         </button>
       </div>
 
-      <div className="bg-gray-950/80 border border-gray-800/80 rounded-2xl p-4 flex flex-col gap-3">
+      <div className="bg-gray-950/80 border border-white/10 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
         <h4 className="text-xs lg:text-sm font-black text-teal-300 flex items-center gap-1.5">
           <HelpCircle size={15} /> 3ステップクイックガイド
         </h4>
         <div className="flex flex-col gap-2.5 text-xs lg:text-sm">
           <div className="flex gap-2.5 items-start">
-            <span className="w-4 h-4 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+            <span className="w-4 h-4 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">1</span>
             <p className="text-xs lg:text-sm text-gray-300 leading-snug">「ドレミ」でメロディを入力</p>
           </div>
           <div className="flex gap-2.5 items-start">
-            <span className="w-4 h-4 rounded-full bg-teal-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+            <span className="w-4 h-4 rounded-full bg-teal-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">2</span>
             <p className="text-xs lg:text-sm text-gray-300 leading-snug">全34パターンのコード進行を自動判定</p>
           </div>
           <div className="flex gap-2.5 items-start">
-            <span className="w-4 h-4 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+            <span className="w-4 h-4 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">3</span>
             <p className="text-xs lg:text-sm text-gray-300 leading-snug">リアルタイム試聴＆キー・テンポ調整</p>
           </div>
         </div>
@@ -213,11 +213,11 @@ function RightSidebar() {
           <History size={14} className="text-purple-400" /> 最新アップデート & 開発ログ
         </h4>
         {NEWS_ITEMS.slice(0, 2).map((item) => (
-          <div key={item.id} className="p-3.5 bg-gray-950/60 border border-gray-800/80 rounded-xl flex flex-col gap-1.5">
+          <div key={item.id} className="p-3.5 bg-gray-950/60 border border-white/5 rounded-2xl flex flex-col gap-1.5 shadow-md">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold text-gray-500">{item.date}</span>
               {item.isMajor && (
-                <span className="text-[9px] font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">
+                <span className="text-[9px] font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full">
                   MAJOR
                 </span>
               )}
@@ -233,9 +233,9 @@ function RightSidebar() {
           <Rocket size={14} className="text-amber-400" /> 今後の追加予定機能
         </h4>
         {ROADMAP_ITEMS.slice(0, 3).map((item, idx) => (
-          <div key={idx} className="p-3.5 bg-gray-950/40 border border-gray-800/60 rounded-xl flex flex-col gap-1.5">
+          <div key={idx} className="p-3.5 bg-gray-950/40 border border-white/5 rounded-2xl flex flex-col gap-1.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black px-1.5 py-0.2 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
+              <span className="text-[9px] font-black px-1.5 py-0.2 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full">
                 {item.tag || '開発中'}
               </span>
             </div>
@@ -252,7 +252,7 @@ export default function MusicApp() {
   return (
     <BrowserRouter>
       <div className="h-[100dvh] lg:h-screen w-full bg-gray-950 flex justify-center items-center overflow-hidden font-sans select-none relative pt-[env(safe-area-inset-top)]">
-        <div className="w-full max-w-[430px] lg:max-w-[1400px] h-full lg:h-[95vh] bg-gray-950 shadow-2xl relative text-white overflow-hidden lg:rounded-3xl lg:border lg:border-gray-800/80 lg:shadow-teal-950/20 flex">
+        <div className="w-full max-w-[430px] lg:max-w-[1400px] h-full lg:h-[95vh] bg-gray-950/80 backdrop-blur-2xl shadow-2xl relative text-white overflow-hidden lg:rounded-3xl lg:border lg:border-white/10 lg:shadow-teal-950/30 flex">
           
           <LeftSidebar />
 

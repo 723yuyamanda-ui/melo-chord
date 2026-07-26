@@ -1,7 +1,7 @@
 // src/components/LandingPage.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Rocket, History, Plus, Heart } from 'lucide-react';
+import { ArrowLeft, BookOpen, Rocket, History, Plus, Heart, Sparkles, Notebook } from 'lucide-react';
 import { NEWS_ITEMS, ROADMAP_ITEMS, DEV_LOGS } from '../constants/news';
 
 export default function LandingPage() {
@@ -11,10 +11,10 @@ export default function LandingPage() {
     <div className="h-[100dvh] lg:h-full w-full bg-gray-950 text-gray-100 select-none relative overflow-y-auto scrollbar-none flex flex-col items-center">
       
       {/* ─── ヘッダー ─── */}
-      <header className="sticky top-0 w-full max-w-none lg:max-w-5xl bg-gray-950/90 backdrop-blur-md border-b border-gray-900 px-4 lg:px-8 py-3.5 flex items-center justify-between z-50 shrink-0">
+      <header className="sticky top-0 w-full max-w-none lg:max-w-5xl bg-gray-950/80 backdrop-blur-2xl border-b border-white/10 px-4 lg:px-8 py-3.5 flex items-center justify-between z-50 shrink-0">
         <button 
           onClick={() => navigate('/')} 
-          className="w-8 h-8 flex items-center justify-center bg-gray-900 rounded-full text-gray-400 hover:text-white transition-colors"
+          className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-gray-300 hover:text-white transition-colors"
         >
           <ArrowLeft size={16} />
         </button>
@@ -28,7 +28,7 @@ export default function LandingPage() {
         
         {/* ─── 1. メインヒーロー ─── */}
         <section className="flex flex-col gap-4 text-center items-center py-4 lg:py-8">
-          <span className="text-xs font-black px-3.5 py-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-teal-300 border border-teal-500/30 rounded-full tracking-wider uppercase">
+          <span className="text-xs font-black px-4 py-1.5 bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-teal-300 border border-teal-500/30 rounded-full tracking-wider uppercase shadow-inner">
             Melo Chord (ベータ版)
           </span>
           <h1 className="text-2xl lg:text-4xl font-black text-white leading-tight tracking-tight">
@@ -40,7 +40,7 @@ export default function LandingPage() {
           </p>
         </section>
 
-        <hr className="border-gray-900" />
+        <hr className="border-white/10" />
 
         {/* ─── 2. 使い方の詳細ガイド ─── */}
         <section className="flex flex-col gap-6">
@@ -50,9 +50,9 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 flex flex-col gap-2.5">
+            <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 flex flex-col gap-2.5 shadow-xl">
               <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">1</span>
+                <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-md">1</span>
                 <h3 className="text-sm lg:text-base font-black text-gray-100">メロディを入力（鍵盤画面）</h3>
               </div>
               <p className="text-xs lg:text-sm text-gray-300 font-medium leading-relaxed pl-8">
@@ -60,9 +60,9 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 flex flex-col gap-2.5">
+            <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 flex flex-col gap-2.5 shadow-xl">
               <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-teal-600 text-white font-black text-xs flex items-center justify-center shrink-0">2</span>
+                <span className="w-6 h-6 rounded-full bg-teal-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-md">2</span>
                 <h3 className="text-sm lg:text-base font-black text-gray-100">コード進行をハンティング</h3>
               </div>
               <p className="text-xs lg:text-sm text-gray-300 font-medium leading-relaxed pl-8">
@@ -70,9 +70,9 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 flex flex-col gap-2.5">
+            <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 flex flex-col gap-2.5 shadow-xl">
               <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0">3</span>
+                <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-md">3</span>
                 <h3 className="text-sm lg:text-base font-black text-gray-100">試聴とアレンジ</h3>
               </div>
               <p className="text-xs lg:text-sm text-gray-300 font-medium leading-relaxed pl-8">
@@ -82,7 +82,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <hr className="border-gray-900" />
+        <hr className="border-white/10" />
 
         {/* ─── 3. 今後のロードマップ ─── */}
         <section className="flex flex-col gap-6">
@@ -93,12 +93,12 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {ROADMAP_ITEMS.map((item, idx) => (
-              <div key={idx} className="bg-gray-900/40 border border-gray-800/80 rounded-2xl p-5 flex flex-col gap-2">
+              <div key={idx} className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col gap-2 shadow-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] lg:text-xs font-black px-2.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
+                  <span className="text-[10px] lg:text-xs font-black px-2.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full">
                     {item.tag || '開発中'}
                   </span>
-                  <span className="text-xs font-mono font-bold text-gray-500">
+                  <span className="text-xs font-mono font-bold text-gray-400">
                     {item.status === 'upcoming' ? '実装予定' : '検討中'}
                   </span>
                 </div>
@@ -109,7 +109,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <hr className="border-gray-900" />
+        <hr className="border-white/10" />
 
         {/* ─── 4. 開発ログ & 全更新履歴 ─── */}
         <section className="flex flex-col gap-8">
@@ -120,11 +120,13 @@ export default function LandingPage() {
 
           {/* 開発ノート */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">📝 開発裏話ノート</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Notebook size={14} className="text-purple-400" /> 開発裏話ノート
+            </h3>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {DEV_LOGS.map((log, idx) => (
-                <div key={idx} className="bg-purple-950/20 border border-purple-900/30 rounded-2xl p-5 flex flex-col gap-2">
-                  <span className="text-xs font-mono text-purple-400">{log.date}</span>
+                <div key={idx} className="bg-purple-950/20 backdrop-blur-xl border border-purple-900/30 rounded-2xl p-5 flex flex-col gap-2 shadow-lg">
+                  <span className="text-xs font-mono text-purple-400 font-bold">{log.date}</span>
                   <h4 className="text-sm lg:text-base font-black text-purple-200">{log.title}</h4>
                   <p className="text-xs lg:text-sm text-gray-300 font-medium leading-relaxed">{log.content}</p>
                 </div>
@@ -134,12 +136,14 @@ export default function LandingPage() {
 
           {/* 全バージョン更新履歴 */}
           <div className="flex flex-col gap-3 mt-2">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">📜 アップアップデート履歴</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles size={14} className="text-amber-400" /> アップデート履歴
+            </h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {NEWS_ITEMS.map((news) => (
-                <div key={news.id} className="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 flex flex-col gap-2">
+                <div key={news.id} className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col gap-2 shadow-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold text-gray-500">{news.date} ({news.id})</span>
+                    <span className="text-xs font-mono font-bold text-gray-400">{news.date} ({news.id})</span>
                     {news.isMajor && (
                       <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full">
                         MAJOR
@@ -154,23 +158,23 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <hr className="border-gray-900" />
+        <hr className="border-white/10" />
 
-        {/* ─── 最下部：ホームへ戻る巨大アクションボタン ─── */}
+        {/* ─── 最下部：アクションボタン ─── */}
         <section className="flex flex-col gap-4 items-center text-center pt-6 pb-16">
           <div className="flex items-center gap-1.5 text-xs lg:text-sm text-gray-400 font-bold">
             <Heart size={14} className="text-rose-500 fill-current" />
             <span>Melo Chord で新しい曲に出会おう</span>
           </div>
 
-          <div className="w-full max-w-md bg-gradient-to-b from-gray-900/90 to-gray-950 border border-teal-500/30 p-6 rounded-3xl shadow-2xl flex flex-col gap-4">
+          <div className="w-full max-w-md bg-gray-900/80 backdrop-blur-2xl border border-teal-500/30 p-6 rounded-3xl shadow-2xl flex flex-col gap-4">
             <p className="text-xs lg:text-sm font-bold text-teal-300/90 tracking-wide">
               さあ、あなたのメロディを入力してみましょう！
             </p>
 
             <button 
               onClick={() => navigate('/')}
-              className="w-full py-5 bg-gradient-to-r from-blue-600 via-teal-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black text-base lg:text-lg flex items-center justify-center gap-2.5 text-white shadow-xl shadow-teal-500/25 transition-all active:scale-[0.98] border border-teal-400/30 tracking-tight"
+              className="w-full py-5 bg-gradient-to-r from-blue-600 via-teal-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black text-base lg:text-lg flex items-center justify-center gap-2.5 text-white shadow-xl shadow-teal-500/20 transition-all active:scale-[0.98] border border-white/10 tracking-tight"
             >
               <Plus size={20} strokeWidth={3} />
               <span>さっそく曲を作る（ホームへ戻る）</span>

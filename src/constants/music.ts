@@ -164,3 +164,30 @@ export const getNoteNameFromMidi = (midiNote: number): string => {
   const noteIndex = midiNote % 12;
   return `${PIANO_KEYS[noteIndex].note}${octave}`;
 };
+
+// src/constants/music.ts の末尾等に追加
+
+export const getGuitarChordNotes = (chordName: string) => {
+  if (chordName === '-' || !chordName) return null;
+  const [chord, slash] = chordName.split('/');
+  let root = chord[1] === '#' || chord[1] === 'b' ? chord.slice(0, 2) : chord.slice(0, 1);
+  let type = chord.slice(root.length);
+
+  const rootIndex = getNoteIndex(root);
+  const intervals = CHORD_TYPES[type] || CHORD_TYPES[''];
+
+  // ギター低音：ルートまたはオンコードベース音（オクターブ3）
+  const bassNoteName = slash ? slash : root;
+  const bassIdx = getNoteIndex(bassNoteName);
+  const gtrBass = `${ALL_NOTES[bassIdx]}3`;
+
+  // ギター高音部：構成音をオープンに配置
+  const gtrNotes = intervals.map(interval => {
+    const noteIdx = (rootIndex + interval) % 12;
+    let oct = 3;
+    if (interval >= 7) oct = 4;
+    return `${ALL_NOTES[noteIdx]}${oct}`;
+  });
+
+  return { notes: Array.from(new Set([gtrBass, ...gtrNotes])) };
+};
