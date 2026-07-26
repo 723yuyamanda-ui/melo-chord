@@ -61,7 +61,7 @@ export function useAudioPlayer() {
       const melodySampler = new Tone.Sampler({
         urls: { "C4": "C4.mp3", "C5": "C5.mp3", "C6": "C6.mp3" },
         baseUrl: "/samples/vibraphone/",
-        volume: -17
+        volume: -14
       }).connect(reverb);
       (melodySampler as any).polyphony = 32; 
       melodySamplerRef.current = melodySampler;
@@ -69,7 +69,7 @@ export function useAudioPlayer() {
       const pianoSampler = new Tone.Sampler({
         urls: { "C3": "C3.mp3", "C4": "C4.mp3", "C5": "C5.mp3" },
         baseUrl: "/samples/piano/",
-        volume: -14
+        volume: -10
       }).connect(reverb);
       (pianoSampler as any).polyphony = 32; 
       pianoSamplerRef.current = pianoSampler;
@@ -77,7 +77,7 @@ export function useAudioPlayer() {
       const guitarSampler = new Tone.Sampler({
         urls: { "C3": "C3.mp3", "C4": "C4.mp3", "C5": "C5.mp3" },
         baseUrl: "/samples/guitar/",
-        volume: -16
+        volume: -10
       }).connect(reverb);
       (guitarSampler as any).polyphony = 32; 
       guitarSamplerRef.current = guitarSampler;
@@ -85,7 +85,7 @@ export function useAudioPlayer() {
       const bassSampler = new Tone.Sampler({
         urls: { "C2": "C2.mp3", "C3": "C3.mp3" },
         baseUrl: "/samples/bass/",
-        volume: -13
+        volume: -20
       }).toDestination().connect(reverb);
       (bassSampler as any).polyphony = 12; 
       bassSamplerRef.current = bassSampler;

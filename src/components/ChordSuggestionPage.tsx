@@ -69,6 +69,30 @@ export default function ChordSuggestionPage() {
     }
   }, [isListOpen, isSaveModalOpen]);
 
+  // 現在選択されている曲のタイトルを取得
+  const displayMelodyTitle = useMemo(() => {
+    if (location.state?.presetTitle) {
+      return location.state.presetTitle;
+    }
+    if (currentMelodyId) {
+      const found = savedMelodies.find(m => m.id === currentMelodyId);
+      if (found) return found.title;
+    }
+    return '作成中のメロディ';
+  }, [location.state?.presetTitle, currentMelodyId, savedMelodies]);
+
+  useEffect(() => {
+    if (location.state?.melodyGrid) {
+      stopPlayback();
+      setPlayingId(null);
+      setMelodyGrid(location.state.melodyGrid);
+      setCurrentMelodyId(location.state.currentMelodyId || null);
+      if (location.state.bpm) setBpm(location.state.bpm);
+      setManualTranspose(0);
+      showToast(`📂 メロディを切り替えました！`);
+    }
+  }, [location.state?.keyTimestamp, location.state?.currentMelodyId]);
+
   const { currentKeyName, allScoredSuggestions } = useMemo(() => {
     const adjustedGridForEngine = melodyGrid
       .filter(n => n.col >= 16)
@@ -80,14 +104,6 @@ export default function ChordSuggestionPage() {
       currentKeyName: result.currentKeyName,
       allScoredSuggestions: result.suggestions
     };
-  }, [melodyGrid, manualTranspose]);
-
-  const transposedMelodyGrid = useMemo(() => {
-    if (manualTranspose === 0) return melodyGrid;
-    return melodyGrid.map(note => {
-      if (note.midiNote === 0) return note;
-      return { ...note, midiNote: note.midiNote + manualTranspose };
-    });
   }, [melodyGrid, manualTranspose]);
 
   const visibleSuggestions = useMemo(() => {
@@ -105,11 +121,10 @@ export default function ChordSuggestionPage() {
   }, [playingId, allScoredSuggestions]);
 
   const handleToggleCardPlay = async (id: string, resultItem: ScoredChordResult) => {
-
     if (Tone.context.state !== 'running') {
-        await Tone.start();
-        await Tone.context.resume();
-      }
+      await Tone.start();
+      await Tone.context.resume();
+    }
 
     if (playingId === id && isPlaying) {
       stopPlayback();
@@ -206,7 +221,6 @@ export default function ChordSuggestionPage() {
     });
   };
 
-  // ★ シームレスBPM変更（再生を止めずにリアルタイム変更）
   const toggleBpm = () => {
     setBpm(prev => {
       let nextBpm = 110;
@@ -215,7 +229,6 @@ export default function ChordSuggestionPage() {
       else if (prev === 135) nextBpm = 160;
       else nextBpm = 85;
 
-      // 再生中であればTone.TransportのBPMを直接リアルタイム書き換え
       if (isPlaying) {
         Tone.Transport.bpm.value = nextBpm;
       }
@@ -224,10 +237,20 @@ export default function ChordSuggestionPage() {
     showToast("🕒 テンポを変更しました");
   };
 
-  // ★ シームレスカテゴリ変更（再生を止めずにタブ切り替え）
   const handleCategoryChange = (categoryKey: string) => {
     setSelectedCategory(categoryKey);
     setIsExpanded(false);
+  };
+
+  const handleBack = () => {
+    stopPlayback();
+    if (location.state?.isFromPreset) {
+      navigate('/preset-list');
+    } else if (location.state?.isFromSaved) {
+      navigate('/', { state: { openSavedList: true } });
+    } else {
+      navigate(-1);
+    }
   };
 
   const handleGoToEditor = () => {
@@ -246,35 +269,41 @@ export default function ChordSuggestionPage() {
   useEffect(() => { return () => { stopPlayback(); }; }, []);
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col bg-gray-950 text-white select-none relative overflow-hidden">
+    <div className="h-full w-full flex flex-col bg-gray-950 text-white select-none relative overflow-hidden">
       {toast && <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[110] bg-teal-500 border border-teal-400 text-gray-950 px-5 py-2.5 rounded-full font-black text-xs shadow-2xl">{toast}</div>}
 
+      {/* ─── 固定トップエリア（ヘッダー + コントローラー） ─── */}
       <div className="sticky top-0 bg-gray-950/95 backdrop-blur-md border-b border-gray-900 z-30 flex flex-col shrink-0">
+        
+        {/* ヘッダー */}
         <header className="px-4 py-2 border-b border-gray-900/50 flex items-center justify-between">
-          <button onClick={() => { stopPlayback(); navigate('/'); }} className="w-8 h-8 flex items-center justify-center bg-gray-900 rounded-full text-gray-400 hover:text-white"><ArrowLeft size={16} /></button>
+          <button onClick={handleBack} className="w-8 h-8 flex items-center justify-center bg-gray-900 rounded-full text-gray-400 hover:text-white transition-colors"><ArrowLeft size={16} /></button>
           
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Sparkles size={14} className="text-teal-400" />
-              <span className="font-black text-xs bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-400">進行ハンティング</span>
+          <div className="flex flex-col items-center">
+            <span className="text-xs font-black text-white max-w-[160px] sm:max-w-[240px] truncate">
+              {displayMelodyTitle}
+            </span>
+            <div className="flex items-center gap-1 text-[10px] text-teal-400 font-bold">
+              <Sparkles size={10} />
+              <span>コード進行一覧</span>
             </div>
+          </div>
 
+          <div className="flex items-center gap-2">
             <button 
               onClick={handleGoToEditor}
               className="px-2 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-700/80 rounded-lg text-teal-400 hover:text-teal-300 text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
             >
               <Edit2 size={11} />
-              <span>メロディ編集</span>
+              <span className="hidden sm:inline">メロディ編集</span>
             </button>
-          </div>
 
-          <div className="flex items-center gap-4">
             <button onClick={handleOpenSaveDialog} className="flex flex-col items-center justify-center gap-0.5 text-blue-400 active:scale-95 transition-transform">
-              <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl"><Save size={13} /></div>
+              <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl hover:bg-gray-800"><Save size={13} /></div>
               <span className="text-[8px] font-black tracking-tighter">保存</span>
             </button>
-            <button onClick={() => setIsListOpen(true)} className="flex flex-col items-center justify-center gap-0.5 text-teal-400 active:scale-95 transition-transform relative">
-              <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl">
+            <button onClick={() => setIsListOpen(true)} className="flex flex-col items-center justify-center gap-0.5 text-teal-400 active:scale-95 transition-transform relative lg:hidden">
+              <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl hover:bg-gray-800">
                 <FolderHeart size={13} />
               </div>
               <span className="text-[8px] font-black tracking-tighter">一覧</span>
@@ -289,47 +318,47 @@ export default function ChordSuggestionPage() {
         </div>
 
         {/* 移調・BPM コントロールパネル */}
-        <div className="px-4 pt-3 pb-3 border-b border-gray-900/50 flex items-center justify-between bg-gray-900/10 gap-3">
-          <div className="flex items-center gap-2 flex-1 max-w-[210px]">
+        <div className="px-4 pt-2.5 pb-2.5 border-b border-gray-900/50 flex items-center justify-between bg-gray-900/10 gap-3">
+          <div className="flex items-center gap-2 flex-1 max-w-[240px]">
             <Music size={12} className="text-gray-500 shrink-0" />
-            <div className="flex items-center bg-gray-950 rounded-xl border border-gray-800/80 p-1 w-full h-11 justify-between shadow-inner">
+            <div className="flex items-center bg-gray-950 rounded-xl border border-gray-800/80 p-1 w-full h-10 justify-between shadow-inner">
               <button
                 onClick={() => handleKeyShift(-1)}
                 disabled={manualTranspose <= -12}
-                className="w-9 h-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 disabled:opacity-20 rounded-lg font-black text-sm flex items-center justify-center transition-colors active:scale-95 shadow-sm"
+                className="w-8 h-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 disabled:opacity-20 rounded-lg font-black text-xs flex items-center justify-center transition-colors active:scale-95 shadow-sm"
               >
-                <Minus size={13} />
+                <Minus size={12} />
               </button>
-              <span className="text-[15px] font-mono font-black text-teal-400 text-center flex-1">
+              <span className="text-xs font-mono font-black text-teal-400 text-center flex-1">
                 {currentKeyName.replace(" Major", "")}
               </span>
               <button
                 onClick={() => handleKeyShift(1)}
                 disabled={manualTranspose >= 12}
-                className="w-9 h-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 disabled:opacity-20 rounded-lg font-black text-sm flex items-center justify-center transition-colors active:scale-95 shadow-sm"
+                className="w-8 h-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 disabled:opacity-20 rounded-lg font-black text-xs flex items-center justify-center transition-colors active:scale-95 shadow-sm"
               >
-                <Plus size={13} />
+                <Plus size={12} />
               </button>
             </div>
           </div>
 
           <button
             onClick={toggleBpm}
-            className="flex items-center bg-gray-950 hover:bg-gray-900/60 px-3 rounded-xl border border-gray-800/80 h-11 min-w-[105px] justify-between shadow-md active:scale-95 transition-all"
+            className="flex items-center bg-gray-950 hover:bg-gray-900/60 px-3 rounded-xl border border-gray-800/80 h-10 min-w-[95px] justify-between shadow-md active:scale-95 transition-all"
           >
             <span className="text-[9px] font-mono font-black text-gray-500 tracking-wider uppercase">BPM</span>
-            <span className="text-base font-mono font-black text-yellow-400 tracking-tight">{bpm}</span>
+            <span className="text-sm font-mono font-black text-yellow-400 tracking-tight">{bpm}</span>
           </button>
         </div>
 
         {/* カテゴリセレクター */}
-        <div className="py-2.5 flex flex-col gap-2.5 bg-gray-950">
+        <div className="py-2 flex flex-col bg-gray-950">
           <div className="flex gap-2 overflow-x-auto px-3 scrollbar-none">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.key}
                 onClick={() => handleCategoryChange(cat.key)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-[11px] font-black border transition-all active:scale-95 ${
+                className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-[11px] font-black border transition-all active:scale-95 ${
                   selectedCategory === cat.key
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-500 text-white shadow-md shadow-blue-600/10'
                     : 'bg-gray-900/60 border-gray-800 text-gray-400 hover:text-gray-200'
@@ -342,33 +371,35 @@ export default function ChordSuggestionPage() {
         </div>
       </div>
 
-      {/* メインリスト */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-2.5 pb-24 scrollbar-none">
-        {visibleSuggestions.map((result) => {
-          const activeChords = result.chordsMap.Standard;
-          return (
-            <ChordCard
-              key={result.templateId}
-              pattern={{
-                id: result.templateId,
-                title: result.title,
-                description: result.description,
-                categoryLabel: result.categoryLabel,
-                rawScore: result.score,
-                tags: result.tags,
-                chords: activeChords
-              }}
-              isPlaying={playingId === result.templateId && isPlaying}
-              onTogglePlay={() => handleToggleCardPlay(result.templateId, result)}
-              currentKeyName={currentKeyName}
-              currentPlayback16th={playingId === result.templateId ? playback16th : 0}
-              bars={bars}
-            />
-          );
-        })}
+      {/* ─── メインカードエリア (1〜2列レスポンシブグリッド) ─── */}
+      <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3 pb-24 scrollbar-none">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {visibleSuggestions.map((result) => {
+            const activeChords = result.chordsMap.Standard;
+            return (
+              <ChordCard
+                key={result.templateId}
+                pattern={{
+                  id: result.templateId,
+                  title: result.title,
+                  description: result.description,
+                  categoryLabel: result.categoryLabel,
+                  rawScore: result.score,
+                  tags: result.tags,
+                  chords: activeChords
+                }}
+                isPlaying={playingId === result.templateId && isPlaying}
+                onTogglePlay={() => handleToggleCardPlay(result.templateId, result)}
+                currentKeyName={currentKeyName}
+                currentPlayback16th={playingId === result.templateId ? playback16th : 0}
+                bars={bars}
+              />
+            );
+          })}
+        </div>
 
         {selectedCategory === 'all' && !isExpanded && allScoredSuggestions.length > 12 && (
-          <button onClick={() => setIsExpanded(true)} className="my-1 py-2.5 bg-gray-900/40 border border-gray-800/60 rounded-xl text-[10px] font-bold text-blue-400 flex items-center justify-center gap-1">
+          <button onClick={() => setIsExpanded(true)} className="my-1 py-2.5 bg-gray-900/40 border border-gray-800/60 rounded-xl text-[10px] font-bold text-blue-400 hover:text-blue-300 flex items-center justify-center gap-1 transition-all">
             <span>残りの進行もすべて表示する（全34パターン）</span><ChevronDown size={12} />
           </button>
         )}
@@ -376,7 +407,7 @@ export default function ChordSuggestionPage() {
 
       {/* 固定ボトムコントローラー */}
       {playingId && currentActivePattern && (
-        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] bg-gray-900/90 backdrop-blur-lg border border-amber-500/40 rounded-xl p-2.5 shadow-2xl z-40">
+        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-md bg-gray-900/90 backdrop-blur-lg border border-amber-500/40 rounded-xl p-2.5 shadow-2xl z-40">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 overflow-hidden flex-1">
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-gray-950 shrink-0 ${isPlaying ? 'animate-pulse' : ''}`}><Music size={14} fill="currentColor" /></div>
@@ -408,7 +439,7 @@ export default function ChordSuggestionPage() {
       {/* 保存モーダル */}
       {isSaveModalOpen && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 w-full max-w-xs flex flex-col gap-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 w-full max-w-xs flex flex-col gap-4 shadow-2xl">
             <h4 className="text-sm font-black text-white flex items-center gap-1.5"><Save size={16} className="text-blue-400" />メロディを資産保存</h4>
             <input type="text" value={inputName} onChange={(e) => setInputName(e.target.value.slice(0, 10))} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs font-bold text-white text-center focus:outline-none focus:border-blue-500" />
             <div className="flex flex-col gap-2">
@@ -426,9 +457,9 @@ export default function ChordSuggestionPage() {
         </div>
       )}
 
-      {/* 一覧モーダル */}
+      {/* 一覧モーダル（スマホ用） */}
       {isListOpen && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-[100] flex flex-col animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-[100] flex flex-col animate-in fade-in duration-200 lg:hidden">
           <div className="w-full max-w-[430px] h-[85vh] mt-auto mx-auto bg-gray-900 border-t border-gray-800 rounded-t-3xl p-5 flex flex-col shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-gray-800 shrink-0">
               <div className="flex items-center gap-2 text-teal-400"><FolderHeart size={18} /><h3 className="font-black text-sm tracking-tight text-white">保存したメロディ資産 ({savedMelodies.length})</h3></div>
@@ -439,7 +470,7 @@ export default function ChordSuggestionPage() {
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500"><Music size={40} className="text-gray-700 mb-2" /><p className="text-xs font-bold">保存された資産がありません</p></div>
               ) : (
                 savedMelodies.map((item) => (
-                  <div key={item.id} onClick={() => handleLoadMelody(item)} className={`p-3 bg-gray-950 border rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${currentMelodyId === item.id ? 'border-teal-500/50' : 'border-gray-800/80'}`}>
+                  <div key={item.id} onClick={() => handleLoadMelody(item)} className={`p-3 bg-gray-950 border rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all ${currentMelodyId === item.id ? 'border-teal-500/50' : 'border-gray-800/80 hover:border-gray-700'}`}>
                     <div className="flex-1 flex flex-col gap-1 overflow-hidden">
                       {editingItemId === item.id ? (
                         <div className="flex items-center gap-1.5 py-0.5" onClick={(e)=>e.stopPropagation()}>

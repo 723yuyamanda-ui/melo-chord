@@ -129,7 +129,6 @@ export default function SimpleKeyboardInput() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
 
-  // 1. スライド機能（ナッジ：全体を1マスずつ動かす）
   const handleNudge = (direction: 'left' | 'right') => {
     if (isPlaying || melodyGrid.length === 0) return;
     const offset = direction === 'left' ? -1 : 1;
@@ -141,7 +140,6 @@ export default function SimpleKeyboardInput() {
     showToast(`全体を${direction === 'left' ? '前' : '後ろ'}にシフトしました`);
   };
 
-  // 2. スマート・スキップ（休符挿入）
   const handleSkip = () => {
     if (isPlaying || !isRecordMode) return;
 
@@ -165,13 +163,11 @@ export default function SimpleKeyboardInput() {
     showToast(`休符を挿入しました`);
   };
 
-  // 3. タイムラインクリック
   const handleTimelineGridClick = (targetStep: number) => {
     if (isPlaying || targetStep >= maxAllowedStep) return;
     setCurrentStep(targetStep);
   };
 
-  // 4. 鍵盤入力
   const handleInputNote = async (offset: number, keyOctave: number) => {
     if (isPlaying) return;
     if (Tone.context.state !== 'running') {
@@ -195,7 +191,6 @@ export default function SimpleKeyboardInput() {
     setCurrentStep(prev => Math.min(maxAllowedStep - 1, prev + step));
   };
 
-  // 5. 消去/戻る機能
   const handleClearLast = () => {
     if (isPlaying || !isRecordMode) return;
     
@@ -291,53 +286,56 @@ export default function SimpleKeyboardInput() {
   const activeSoundNoteCount = melodyGrid.filter(n => n.midiNote !== 0).length;
 
   return (
-    <div className="h-full w-full flex flex-col bg-gray-950 text-white select-none relative overflow-hidden px-4">
+    <div className="h-full w-full flex flex-col bg-gray-950 text-white select-none relative overflow-y-auto scrollbar-none px-4 lg:px-6">
       {toast && <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[110] bg-teal-500 text-gray-950 px-5 py-2.5 rounded-full font-black text-xs shadow-2xl animate-in fade-in zoom-in-95 duration-150">{toast}</div>}
 
       {/* ヘッダー */}
       <div className="border-b border-gray-900 flex items-center justify-between py-2 shrink-0">
-        <button onClick={() => { stopPlayback(); navigate('/'); }} className="text-gray-400 hover:text-white"><ArrowLeft size={18} /></button>
+        <button onClick={() => { stopPlayback(); navigate('/'); }} className="text-gray-400 hover:text-white transition-colors flex items-center gap-1 font-bold text-xs lg:text-sm">
+          <ArrowLeft size={16} />
+          <span className="hidden lg:inline">ホームへ戻る</span>
+        </button>
         
         <div className="flex bg-gray-900 p-0.5 rounded-xl border border-gray-800">
           <button onClick={() => setSelectedBars(4)} className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${selectedBars === 4 ? 'bg-teal-500 text-gray-950 shadow-md' : 'text-gray-400 hover:text-white'}`}>4小節</button>
           <button onClick={() => setSelectedBars(8)} className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${selectedBars === 8 ? 'bg-teal-500 text-gray-950 shadow-md' : 'text-gray-400 hover:text-white'}`}>8小節</button>
         </div>
         
-        <div className="flex items-center gap-4">
-          <button onClick={() => { if (melodyGrid.length === 0) return; setInputName(savedMelodies.find(m => m.id === currentMelodyId)?.title || `メロディ #${savedMelodies.length + 1}`); setIsSaveModalOpen(true); }} className="flex flex-col items-center justify-center gap-0.5 text-blue-400 active:scale-95">
-            <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl"><Save size={13} /></div>
+        <div className="flex items-center gap-3">
+          <button onClick={() => { if (melodyGrid.length === 0) return; setInputName(savedMelodies.find(m => m.id === currentMelodyId)?.title || `メロディ #${savedMelodies.length + 1}`); setIsSaveModalOpen(true); }} className="flex flex-col items-center justify-center gap-0.5 text-blue-400 hover:text-blue-300 active:scale-95 transition-all">
+            <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl hover:bg-gray-800"><Save size={13} /></div>
             <span className="text-[8px] font-black uppercase">保存</span>
           </button>
-          <button onClick={() => setIsListOpen(true)} className="flex flex-col items-center justify-center gap-0.5 text-teal-400 active:scale-95 relative">
-            <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl"><FolderHeart size={13} /></div>
+          <button onClick={() => setIsListOpen(true)} className="flex flex-col items-center justify-center gap-0.5 text-teal-400 hover:text-teal-300 active:scale-95 transition-all relative lg:hidden">
+            <div className="w-7 h-7 flex items-center justify-center bg-gray-900 rounded-xl hover:bg-gray-800"><FolderHeart size={13} /></div>
             <span className="text-[8px] font-black uppercase">一覧</span>
           </button>
         </div>
       </div>
       
-      <div className="flex-1 flex flex-col justify-start gap-3 overflow-hidden pt-2">
+      <div className="flex-1 flex flex-col justify-between gap-2.5 pt-2 pb-4">
         
         {/* タイムライン */}
-        <div className="w-full bg-gray-900 border border-gray-800 p-3 rounded-xl h-[142px] flex flex-col relative shrink-0">
+        <div className="w-full bg-gray-900 border border-gray-800 p-2.5 rounded-2xl h-[128px] lg:h-[135px] flex flex-col relative shrink-0 shadow-lg">
           <div className="flex justify-between items-center mb-1">
-            <div className="flex items-center gap-1.5 overflow-hidden">
-              <span className="text-[10px] text-gray-500 font-bold truncate uppercase tracking-widest">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="text-[10px] text-gray-400 font-bold truncate uppercase tracking-widest">
                 {currentMelodyId ? savedMelodies.find(m=>m.id===currentMelodyId)?.title : 'Timeline'}
               </span>
-              <span className="text-[9px] font-mono font-black text-teal-400 bg-gray-950 px-1.5 py-0.5 rounded border border-teal-500/30">
+              <span className="text-[9px] font-mono font-black text-teal-400 bg-gray-950 px-2 py-0.5 rounded border border-teal-500/30">
                 Key: {currentDisplayKeyName}
               </span>
             </div>
             
             <div className="flex items-center gap-2">
               {/* 全体ずらし（ナッジ） */}
-              <div className="flex items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800">
-                <button onClick={() => handleNudge('left')} className="p-1 text-gray-400 hover:text-white"><ChevronLeft size={14}/></button>
-                <span className="text-[8px] font-black text-gray-500">全体ずらし</span>
-                <button onClick={() => handleNudge('right')} className="p-1 text-gray-400 hover:text-white"><ChevronRight size={14}/></button>
+              <div className="flex items-center gap-1 bg-gray-950 p-0.5 rounded-lg border border-gray-800">
+                <button onClick={() => handleNudge('left')} className="p-0.5 text-gray-400 hover:text-white"><ChevronLeft size={13}/></button>
+                <span className="text-[8px] font-black text-gray-400">全体ずらし</span>
+                <button onClick={() => handleNudge('right')} className="p-0.5 text-gray-400 hover:text-white"><ChevronRight size={13}/></button>
               </div>
 
-              <select value={startBarSelection} onChange={(e) => setStartBarSelection(Number(e.target.value))} className="bg-gray-900 text-teal-400 font-mono font-black text-xs py-1 px-1 rounded border border-gray-800">
+              <select value={startBarSelection} onChange={(e) => setStartBarSelection(Number(e.target.value))} className="bg-gray-950 text-teal-400 font-mono font-black text-xs py-0.5 px-1.5 rounded-lg border border-gray-800 focus:outline-none">
                 <option value={0}>Pickup</option>
                 <option value={16}>1小節</option>
                 <option value={48}>3小節</option>
@@ -346,7 +344,7 @@ export default function SimpleKeyboardInput() {
             </div>
           </div>
 
-          <div ref={monitorRef} className="flex-1 flex items-center gap-1 overflow-x-auto w-full px-1 scrollbar-none relative scroll-smooth pt-6 pb-1">
+          <div ref={monitorRef} className="flex-1 flex items-center gap-1 overflow-x-auto w-full px-1 scrollbar-none relative scroll-smooth pt-5 pb-1">
             {Array.from({ length: 144 }).map((_, stepCol) => {
               const found = melodyGrid.find(n => n.col === stepCol);
               const isNowPlaying = activePlayStep === stepCol && isPlaying;
@@ -358,14 +356,14 @@ export default function SimpleKeyboardInput() {
               return (
                 <div key={stepCol} className={`flex-shrink-0 relative ${isMeasureStart ? 'ml-1.5 border-l-2 border-dashed border-gray-700 pl-1' : ''}`}>
                   {isMeasureStart && (
-                    <span className={`absolute -top-5.5 left-0.5 text-[8px] font-mono font-bold ${isDisabledStep ? 'text-gray-800' : isPickupArea ? 'text-purple-500' : 'text-gray-500'}`}>
+                    <span className={`absolute -top-5 left-0.5 text-[8px] font-mono font-bold ${isDisabledStep ? 'text-gray-800' : isPickupArea ? 'text-purple-500' : 'text-gray-500'}`}>
                       {isPickupArea ? 'P' : `${Math.floor((stepCol-16)/16)+1}`}
                     </span>
                   )}
                   <div 
                     onClick={() => handleTimelineGridClick(stepCol)}
-                    className={`w-9 h-11 rounded-lg flex items-center justify-center font-black text-[12px] transition-all duration-75 ${
-                    isDisabledStep ? 'bg-gray-950 opacity-20' 
+                    className={`w-9 h-10 rounded-xl flex items-center justify-center font-black text-[11px] cursor-pointer transition-all duration-75 ${
+                    isDisabledStep ? 'bg-gray-950 opacity-20 cursor-not-allowed' 
                     : isNowPlaying ? 'bg-yellow-400 text-black scale-110 z-20 shadow-[0_0_15px_rgba(250,204,21,0.6)]' 
                     : isSelectedStep ? 'bg-gray-950 border-2 border-teal-400 text-teal-400 animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.4)]' 
                     : found ? (isPickupArea ? 'bg-purple-600/30 border border-purple-500 text-purple-200' : 'bg-blue-600/30 border border-blue-500 text-blue-200')
@@ -381,34 +379,29 @@ export default function SimpleKeyboardInput() {
 
         {/* ステップ操作バー（4列レイアウト：歩幅 / 休符 / 消去 / BPM） */}
         <div className="w-full shrink-0 grid grid-cols-4 gap-2 p-2 bg-gray-900 border border-gray-800 rounded-xl shadow-xl">
-          {/* 1. 歩幅切り替え */}
           <div className="flex bg-gray-950 p-0.5 rounded-lg border border-gray-800">
             <button onClick={() => setGridMode('8n')} className={`flex-1 py-1 text-[9px] font-black rounded ${gridMode === '8n' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>8分</button>
             <button onClick={() => setGridMode('16n')} className={`flex-1 py-1 text-[9px] font-black rounded ${gridMode === '16n' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>16分</button>
           </div>
 
-          {/* 2. 休符 */}
-          <button onClick={handleSkip} disabled={isPlaying || !isRecordMode} className="flex flex-col items-center justify-center bg-gray-950 hover:bg-gray-800/80 border border-gray-800 rounded-lg py-1.5 text-blue-400 active:scale-95 disabled:opacity-20 transition-all">
+          <button onClick={handleSkip} disabled={isPlaying || !isRecordMode} className="flex flex-col items-center justify-center bg-gray-950 hover:bg-gray-800 border border-gray-800 rounded-lg py-1 text-blue-400 active:scale-95 disabled:opacity-20 transition-all">
             <FastForward size={14} />
             <span className="text-[8px] font-black mt-0.5 text-gray-300">休符</span>
           </button>
 
-          {/* 3. 消去/戻る */}
-          <button onClick={handleClearLast} disabled={isPlaying || melodyGrid.length === 0} className="flex flex-col items-center justify-center bg-gray-950 hover:bg-gray-800/80 border border-gray-800 rounded-lg py-1.5 text-red-400 active:scale-95 disabled:opacity-20 transition-all">
+          <button onClick={handleClearLast} disabled={isPlaying || melodyGrid.length === 0} className="flex flex-col items-center justify-center bg-gray-950 hover:bg-gray-800 border border-gray-800 rounded-lg py-1 text-red-400 active:scale-95 disabled:opacity-20 transition-all">
             <Trash2 size={14} />
             <span className="text-[8px] font-black mt-0.5 text-gray-300">消去/戻る</span>
           </button>
 
-          {/* 4. BPM（テンポ） */}
-          <button onClick={toggleBpm} className="flex flex-col items-center justify-center bg-gray-950 hover:bg-gray-800/80 border border-gray-800 rounded-lg py-1.5 text-yellow-400 active:scale-95 transition-all">
+          <button onClick={toggleBpm} className="flex flex-col items-center justify-center bg-gray-950 hover:bg-gray-800 border border-gray-800 rounded-lg py-1 text-yellow-400 active:scale-95 transition-all">
             <Clock size={14} />
             <span className="text-[8px] font-mono font-black mt-0.5 text-yellow-400">{bpm}</span>
           </button>
         </div>
 
         {/* 鍵盤・コントロールエリア */}
-        <div className="flex-1 flex flex-col justify-center my-1">
-          {/* 上部再生・練習/入力切り替えバー */}
+        <div className="flex flex-col justify-center">
           <div className="flex justify-between items-center px-1 mb-2">
             <div className="flex bg-gray-950 p-1 rounded-lg border border-gray-800">
                <button onClick={() => setIsRecordMode(false)} className={`px-3 py-1 rounded-md text-[10px] font-black flex items-center gap-1 ${!isRecordMode ? 'bg-gray-800 text-teal-400' : 'text-gray-500'}`}>
@@ -427,16 +420,16 @@ export default function SimpleKeyboardInput() {
             </button>
           </div>
 
-          {/* スライド鍵盤 */}
-          <div ref={(el) => { if (el && el.scrollLeft === 0) el.scrollLeft = 448; }} className="w-full relative h-[166px] bg-gray-950 flex overflow-x-auto rounded-xl border border-gray-800 scrollbar-none px-2 shadow-2xl">
+          {/* スライド鍵盤（高さをh-[140px]に抑えて縦領域をしっかり確保） */}
+          <div ref={(el) => { if (el && el.scrollLeft === 0) el.scrollLeft = 448; }} className="w-full relative h-[140px] lg:h-[150px] bg-gray-950 flex overflow-x-auto rounded-xl border border-gray-800 scrollbar-none px-2 shadow-2xl">
             <div className="flex relative h-full" style={{ width: '1408px' }}>
               {SLIDABLE_PIANO_KEYS.map((key, index) => (
                 <div key={index} className="w-[64px] h-full relative shrink-0">
-                  <button onClick={() => handleInputNote(key.offset, key.octave)} disabled={isPlaying} className="w-full h-[96%] bg-gray-100 active:bg-blue-100 border-r border-gray-300 rounded-b-xl flex flex-col items-center justify-end pb-5 text-gray-950 font-black text-xs border-t-4 border-blue-400/40">
-                    <span className={`text-[7px] mb-0.5 ${key.type === '主' ? 'text-teal-500 font-bold' : 'text-gray-400'}`}>{key.type === '主' ? 'CENTER' : key.type === '低' ? 'LOW' : 'HIGH'}</span>{key.label}
+                  <button onClick={() => handleInputNote(key.offset, key.octave)} disabled={isPlaying} className="w-full h-[96%] bg-gray-100 hover:bg-blue-50 active:bg-blue-100 border-r border-gray-300 rounded-b-xl flex flex-col items-center justify-end pb-4 text-gray-950 font-black text-xs border-t-4 border-blue-400/40 transition-colors">
+                    <span className={`text-[7px] mb-0.5 ${key.type === '主' ? 'text-teal-600 font-bold' : 'text-gray-400'}`}>{key.type === '主' ? 'CENTER' : key.type === '低' ? 'LOW' : 'HIGH'}</span>{key.label}
                   </button>
                   {key.hasBlack && (
-                    <button onClick={() => handleInputNote(key.bOffset!, key.octave)} disabled={isPlaying} className="absolute top-0 right-[-16px] w-[32px] h-[55%] bg-gray-900 active:bg-blue-600 rounded-b-lg text-white font-bold text-[9px] flex items-end justify-center pb-2 border border-black z-10 shadow-md">{key.bLabel}</button>
+                    <button onClick={() => handleInputNote(key.bOffset!, key.octave)} disabled={isPlaying} className="absolute top-0 right-[-16px] w-[32px] h-[55%] bg-gray-900 hover:bg-gray-800 active:bg-blue-600 rounded-b-lg text-white font-bold text-[9px] flex items-end justify-center pb-2 border border-black z-10 shadow-md transition-colors">{key.bLabel}</button>
                   )}
                 </div>
               ))}
@@ -444,12 +437,12 @@ export default function SimpleKeyboardInput() {
           </div>
         </div>
 
-        {/* 提案ボタン */}
-        <div className="shrink-0 mb-4 flex flex-col items-center gap-2">
-          <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1.5">
+        {/* 提案ボタン（常に視認可能な高さに配置） */}
+        <div className="shrink-0 flex flex-col items-center gap-1.5 pt-1">
+          <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
             <Sparkles size={11} className="text-teal-400" /> 最適なコード進行をAIがランキング提案します
           </span>
-          <button onClick={handleNavigateToSuggest} disabled={melodyGrid.length === 0 || isPlaying} className="w-full h-14 bg-gradient-to-r from-teal-500 to-blue-600 disabled:opacity-20 rounded-xl font-black text-sm flex items-center justify-center gap-2 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)]">
+          <button onClick={handleNavigateToSuggest} disabled={melodyGrid.length === 0 || isPlaying} className="w-full h-12 lg:h-13 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 disabled:opacity-20 rounded-xl font-black text-xs lg:text-sm flex items-center justify-center gap-2 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)] transition-all active:scale-[0.99]">
             コードを探す ({activeSoundNoteCount}音)
           </button>
         </div>
@@ -470,23 +463,23 @@ export default function SimpleKeyboardInput() {
       )}
 
       {isListOpen && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-[100] flex flex-col">
-          <div className="w-full max-w-[430px] h-[80vh] mt-auto mx-auto bg-gray-900 border-t border-gray-800 rounded-t-3xl p-5 flex flex-col">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-[100] flex flex-col animate-in fade-in duration-200 lg:hidden">
+          <div className="w-full max-w-[430px] h-[80vh] my-auto mx-auto bg-gray-900 border border-gray-800 rounded-3xl p-5 flex flex-col shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-gray-800">
               <h3 className="font-black text-sm text-teal-400 tracking-tighter uppercase">Saved Melodies ({savedMelodies.length})</h3>
-              <button onClick={() => setIsListOpen(false)} className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-gray-400"><X size={16} /></button>
+              <button onClick={() => setIsListOpen(false)} className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white"><X size={16} /></button>
             </div>
             <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-3 scrollbar-none">
               {savedMelodies.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-600"><Music size={40} className="mb-2 opacity-20" /><p className="text-xs font-bold">まだ保存されたデータがありません</p></div>
               ) : (
                 savedMelodies.map((item) => (
-                  <div key={item.id} onClick={() => handleLoadMelody(item)} className="p-4 bg-gray-950 border border-gray-800 rounded-xl flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
+                  <div key={item.id} onClick={() => handleLoadMelody(item)} className="p-4 bg-gray-950 border border-gray-800 hover:border-teal-500/40 rounded-xl flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all">
                     <div className="flex flex-col gap-1">
                       <h4 className="text-sm font-black text-white">{item.title}</h4>
                       <p className="text-[10px] text-gray-500 font-mono uppercase">{item.savedAt}</p>
                     </div>
-                    <Trash2 size={16} className="text-gray-700 hover:text-red-500" onClick={(e) => { e.stopPropagation(); const next = savedMelodies.filter(m => m.id !== item.id); setSavedMelodies(next); localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(next)); }} />
+                    <Trash2 size={16} className="text-gray-700 hover:text-red-500 transition-colors" onClick={(e) => { e.stopPropagation(); const next = savedMelodies.filter(m => m.id !== item.id); setSavedMelodies(next); localStorage.setItem('easyComposer_saved_melodies', JSON.stringify(next)); }} />
                   </div>
                 ))
               )}
