@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Plus, FolderHeart, Music, Play, Trash2, X, Edit2, Check, 
-  HelpCircle, MessageSquare, Sparkles, Bell, ArrowRight, Rocket
+  FolderHeart, Music, Play, Trash2, X, Edit2, Check, 
+  HelpCircle, MessageSquare, Sparkles, Bell, ArrowRight, Rocket, Mic
 } from 'lucide-react';
 import { SavedMelodyItem } from '../types';
 import { NEWS_ITEMS } from '../constants/news';
@@ -21,7 +21,6 @@ export default function HomePage() {
 
   const latestMajorNews = NEWS_ITEMS.find(item => item.isMajor);
 
-  // ホームに戻った際、保存一覧から来ていたなら自動でモーダルを開く
   useEffect(() => {
     if (location.state?.openSavedList) {
       setIsListOpen(true);
@@ -61,6 +60,7 @@ export default function HomePage() {
         currentMelodyId: item.id,
         bpm: item.bpm || 110,
         bars: 4,
+        audioUrl: item.audioUrl,
         keyTimestamp: Date.now(),
         isFromSaved: true
       }
@@ -134,18 +134,18 @@ export default function HomePage() {
             </span>
           </h1>
           <p className="text-xs lg:text-sm font-bold text-gray-400 tracking-widest uppercase">
-            メロディから<br />コード進行を提案
+            鼻歌や演奏から<br />コード進行を自動提案
           </p>
         </div>
 
         {/* メインメニューボタン群 */}
         <div className="w-full flex flex-col gap-3.5 z-10">
           <button 
-            onClick={() => navigate('/keyboard')} 
-            className="w-full py-4 lg:py-4.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black text-sm lg:text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl shadow-blue-600/20 text-white border border-blue-400/20"
+            onClick={() => navigate('/audio-input')} 
+            className="w-full py-4 lg:py-4.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-2xl font-black text-sm lg:text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl shadow-red-600/20 text-white border border-red-400/20"
           >
-            <Plus size={18} strokeWidth={3} />
-            <span>新しく作る（鍵盤入力）</span>
+            <Mic size={18} strokeWidth={2.5} />
+            <span>新しく作る（鼻歌・生音録音）</span>
           </button>
 
           <button 
@@ -245,24 +245,24 @@ export default function HomePage() {
               <div className="flex gap-3.5 items-start">
                 <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 text-white shadow-md">1</div>
                 <div>
-                  <h4 className="font-bold text-gray-200">「ドレミ」でメロディを入力</h4>
-                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">鍵盤画面で、あなたの思いついたメロディを直感的に並べてみましょう！</p>
+                  <h4 className="font-bold text-gray-200">鼻歌や生音をマイクで録音</h4>
+                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">頭に浮かんだフレーズをテンポに合わせてマイクに向かって歌うだけ！</p>
                 </div>
               </div>
 
               <div className="flex gap-3.5 items-start">
                 <div className="w-6 h-6 rounded-full bg-teal-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 text-white shadow-md">2</div>
                 <div>
-                  <h4 className="font-bold text-gray-200">メロディからコード進行を自動生成</h4>
-                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">AIがキー（調）を自動検知。ポップ、エモ、アニソンなどから世界観を選びます。</p>
+                  <h4 className="font-bold text-gray-200">AIが音階＆キーを自動解析</h4>
+                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">あなたの歌声からキー（調）や音の構成を自動判定し、最適なコード進行を一覧表示。</p>
                 </div>
               </div>
 
               <div className="flex gap-3.5 items-start">
                 <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 text-white shadow-md">3</div>
                 <div>
-                  <h4 className="font-bold text-gray-200">伴奏を聴いて楽しむ！</h4>
-                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">提案されたいろんなパターンの進行を再生。キーやテンポも変更できます。</p>
+                  <h4 className="font-bold text-gray-200">自分の声と一緒にコード試聴！</h4>
+                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">提案されたコードと一緒に自分の録音音声が鳴ります。Keyシフト（移調）にも声がリアルタイム追従！</p>
                 </div>
               </div>
             </div>
@@ -313,15 +313,6 @@ export default function HomePage() {
                       ) : (
                         <div className="flex items-center gap-1.5 max-w-full">
                           <h4 className="text-sm font-black text-gray-100 truncate">{item.title}</h4>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate('/keyboard', { state: { melodyGrid: item.melodyGrid, currentMelodyId: item.id, bpm: item.bpm } });
-                            }} 
-                            className="p-1 text-[10px] text-gray-500 hover:text-blue-400 font-bold ml-1 flex items-center gap-0.5"
-                          >
-                            <Edit2 size={9}/>鍵盤で修正
-                          </button>
                           <button onClick={(e) => handleStartRename(item.id, item.title, e)} className="p-1 text-gray-500 hover:text-teal-400 transition-colors"><Edit2 size={10}/></button>
                         </div>
                       )}

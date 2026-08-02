@@ -1,4 +1,4 @@
-// src/types/index.ts
+// src/types.ts
 
 export type NoteData = { 
     midiNote: number; // 例: 60 (C4), 61 (C#4), 0 (休符)
@@ -17,4 +17,23 @@ export type NoteData = {
     melodyGrid: NoteData[]; // メロディデータ本体
     bpm: number;            // テンポ（BPM）
     savedAt: string;        // 保存日時 (YYYY/MM/DD HH:mm)
+    audioUrl?: string;      // 生音音声のBlob URL（オプション）
   };
+  
+  // ─── 新設：ピッチ・音声解析用の型定義 ───
+  export interface PitchFrame {
+    timestamp: number;
+    pitch: number;
+    clarity: number;
+    noteJP: string;
+    noteIndex: number; // 0:C, 1:C#, ..., 11:B
+  }
+  
+  export interface AnalysisResult {
+    estimatedKey: string;
+    detectedNotes: string[];              // フィルター済みの主要使用音
+    noteFrequencies: { name: string; percentage: number }[]; // 出現頻度
+    sustainedNotes: string[];             // 長く鳴っている重要音候補
+    endingNote: string;                   // 終止音
+    pitchHistory: PitchFrame[];
+  }

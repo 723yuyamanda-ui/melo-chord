@@ -12,6 +12,7 @@
     "@tonejs/midi": "^2.0.28",
     "lucide-react": "^1.24.0",
     "pitchfinder": "^2.3.4",
+    "pitchy": "^4.1.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",

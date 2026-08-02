@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Sparkles, ArrowLeft, ChevronDown, Music, Minus, Plus, FolderHeart, 
-  Trash2, X, Save, Edit2, Check, Play, Pause, Volume2, VolumeX, Lightbulb 
+  Trash2, X, Save, Edit2, Check, Play, Pause, Volume2, VolumeX, Lightbulb, Mic
 } from 'lucide-react';
 import { generateAndScoreChords, ScoredChordResult } from '../lib/chordEngine';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
@@ -27,6 +27,7 @@ export default function ChordSuggestionPage() {
 
   const bars: number = location.state?.bars || 4;
   const maxStep = bars === 4 ? 80 : 144;
+  const audioUrl: string | undefined = location.state?.audioUrl;
 
   const [playingId, setPlayingId] = useState<string | null>(() => location.state?.playingId || null);
   const [manualTranspose, setManualTranspose] = useState<number>(() => location.state?.manualTranspose || 0);
@@ -72,7 +73,6 @@ export default function ChordSuggestionPage() {
     }
   }, [isListOpen, isSaveModalOpen]);
 
-  // 現在選択されている曲のタイトルを取得
   const displayMelodyTitle = useMemo(() => {
     if (location.state?.presetTitle) {
       return location.state.presetTitle;
@@ -81,7 +81,7 @@ export default function ChordSuggestionPage() {
       const found = savedMelodies.find(m => m.id === currentMelodyId);
       if (found) return found.title;
     }
-    return '作成中のメロディ';
+    return '録音メロディ';
   }, [location.state?.presetTitle, currentMelodyId, savedMelodies]);
 
   useEffect(() => {
@@ -96,18 +96,25 @@ export default function ChordSuggestionPage() {
     }
   }, [location.state?.keyTimestamp, location.state?.currentMelodyId]);
 
+  // ★ 録音時の解析キー（detectedKeyName）があればそれを最優先採用！
   const { currentKeyName, allScoredSuggestions } = useMemo(() => {
     const adjustedGridForEngine = melodyGrid
       .filter(n => n.col >= 16)
       .map(n => ({ ...n, col: n.col - 16 }));
 
     const result = generateAndScoreChords(adjustedGridForEngine, manualTranspose);
+
+    // 録音解析からのキー指定がある場合は優先表示
+    const finalKeyName = location.state?.detectedKeyName
+      ? location.state.detectedKeyName
+      : result.currentKeyName;
+
     return {
       detectedKeyName: result.detectedKeyName,
-      currentKeyName: result.currentKeyName,
+      currentKeyName: finalKeyName,
       allScoredSuggestions: result.suggestions
     };
-  }, [melodyGrid, manualTranspose]);
+  }, [melodyGrid, manualTranspose, location.state?.detectedKeyName]);
 
   const visibleSuggestions = useMemo(() => {
     let result = [...allScoredSuggestions];
@@ -138,9 +145,16 @@ export default function ChordSuggestionPage() {
       const targetChords = resultItem.chordsMap.Standard;
       const safeStartStep = hasPickupNotes ? startBarSelection : 16;
 
-      await startSyncPlayback(melodyGrid, targetChords, (current16th) => {
-        setPlayback16th(current16th);
-      }, manualTranspose, bpm, safeStartStep, maxStep);
+      await startSyncPlayback(
+        melodyGrid, 
+        targetChords, 
+        (current16th) => { setPlayback16th(current16th); }, 
+        manualTranspose, 
+        bpm, 
+        safeStartStep, 
+        maxStep,
+        audioUrl
+      );
 
       setDynamicDetune(manualTranspose);
     }
@@ -164,11 +178,11 @@ export default function ChordSuggestionPage() {
 
     let nextList = [...savedMelodies];
     if (type === 'overwrite' && currentMelodyId) {
-      nextList = nextList.map(item => item.id === currentMelodyId ? { ...item, title: nameToSave, melodyGrid, bpm, savedAt: formattedDate } : item);
+      nextList = nextList.map(item => item.id === currentMelodyId ? { ...item, title: nameToSave, melodyGrid, bpm, audioUrl, savedAt: formattedDate } : item);
       showToast(`「${nameToSave}」を上書き保存しました`);
     } else {
       const newId = `melo-${Date.now()}`;
-      const newItem: SavedMelodyItem = { id: newId, title: nameToSave, melodyGrid, bpm, savedAt: formattedDate };
+      const newItem: SavedMelodyItem = { id: newId, title: nameToSave, melodyGrid, bpm, audioUrl, savedAt: formattedDate };
       nextList = [newItem, ...nextList];
       setCurrentMelodyId(newId);
       showToast(`「${nameToSave}」を新規保存しました`);
@@ -256,17 +270,9 @@ export default function ChordSuggestionPage() {
     }
   };
 
-  const handleGoToEditor = () => {
+  const handleGoToRecordPage = () => {
     stopPlayback();
-    navigate('/keyboard', { 
-      state: { 
-        melodyGrid, 
-        currentMelodyId, 
-        bpm, 
-        bars, 
-        manualTranspose 
-      } 
-    });
+    navigate('/audio-input');
   };
 
   useEffect(() => { return () => { stopPlayback(); }; }, []);
@@ -300,11 +306,11 @@ export default function ChordSuggestionPage() {
 
           <div className="flex items-center gap-2">
             <button 
-              onClick={handleGoToEditor}
-              className="px-2.5 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-teal-400 hover:text-teal-300 text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
+              onClick={handleGoToRecordPage}
+              className="px-2.5 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-red-400 hover:text-red-300 text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
             >
-              <Edit2 size={11} />
-              <span className="hidden sm:inline">メロディ編集</span>
+              <Mic size={11} />
+              <span className="hidden sm:inline">再録音</span>
             </button>
 
             <button onClick={handleOpenSaveDialog} className="flex flex-col items-center justify-center gap-0.5 text-blue-400 active:scale-95 transition-transform">
@@ -435,9 +441,9 @@ export default function ChordSuggestionPage() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button onClick={handleGoToEditor} className="h-8 px-2.5 rounded-xl border border-white/10 bg-gray-950/80 text-[9px] font-black text-teal-400 hover:text-teal-300 transition-all flex items-center gap-1 active:scale-95">
-                <Edit2 size={11} />
-                <span>編集</span>
+              <button onClick={handleGoToRecordPage} className="h-8 px-2.5 rounded-xl border border-white/10 bg-gray-950/80 text-[9px] font-black text-red-400 hover:text-red-300 transition-all flex items-center gap-1 active:scale-95">
+                <Mic size={11} />
+                <span>再録音</span>
               </button>
 
               <button onClick={() => setIsMelodyMuted(!isMelodyMuted)} className={`h-8 px-2.5 rounded-xl border text-[9px] font-black transition-all flex items-center gap-1 active:scale-95 ${isMelodyMuted ? 'bg-red-950/40 border-red-800/40 text-red-400' : 'bg-gray-950/80 border-white/10 text-teal-400'}`}>

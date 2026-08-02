@@ -3,12 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FolderHeart, BookOpen, Music, Trash2, Edit2, Check, Play, 
-  Rocket, History, HelpCircle
+  Rocket, History, HelpCircle, Mic
 } from 'lucide-react';
 
 import HomePage from './components/HomePage';
-import InputSelectPage from './components/InputSelectPage';
-import SimpleKeyboardInput from './components/SimpleKeyboardInput';
+import AudioInputPage from './components/AudioInputPage';
 import ChordSuggestionPage from './components/ChordSuggestionPage';
 import PresetListPage from './components/PresetListPage';
 import LandingPage from './components/LandingPage';
@@ -51,6 +50,7 @@ function LeftSidebar() {
         currentMelodyId: item.id,
         bpm: item.bpm || 110,
         bars: 4,
+        audioUrl: item.audioUrl,
         keyTimestamp: Date.now()
       }
     });
@@ -91,7 +91,7 @@ function LeftSidebar() {
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500 gap-2">
             <Music size={36} className="text-gray-700" />
             <p className="text-xs font-bold">保存された資産がありません</p>
-            <p className="text-[11px] text-gray-500 leading-relaxed">鍵盤画面で作成したメロディを保存するとここに常時表示されます</p>
+            <p className="text-[11px] text-gray-500 leading-relaxed">録音・解析したメロディを保存するとここに表示されます</p>
           </div>
         ) : (
           savedMelodies.map((item) => {
@@ -124,7 +124,7 @@ function LeftSidebar() {
                         {item.title}
                       </h4>
                       {isActive && (
-                        <span className="text-[9px] font-mono font-black text-teal-950 bg-teal-400 px-1.5 py-0.2 rounded font-bold animate-pulse">
+                        <span className="text-[9px] font-mono font-black text-teal-950 bg-teal-400 px-1.5 py-0.2 rounded animate-pulse">
                           ACTIVE
                         </span>
                       )}
@@ -195,15 +195,15 @@ function RightSidebar() {
         <div className="flex flex-col gap-2.5 text-xs lg:text-sm">
           <div className="flex gap-2.5 items-start">
             <span className="w-4 h-4 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">1</span>
-            <p className="text-xs lg:text-sm text-gray-300 leading-snug">「ドレミ」でメロディを入力</p>
+            <p className="text-xs lg:text-sm text-gray-300 leading-snug">鼻歌や生音をマイクで録音</p>
           </div>
           <div className="flex gap-2.5 items-start">
             <span className="w-4 h-4 rounded-full bg-teal-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">2</span>
-            <p className="text-xs lg:text-sm text-gray-300 leading-snug">全34パターンのコード進行を自動判定</p>
+            <p className="text-xs lg:text-sm text-gray-300 leading-snug">AIが音階・キーを全自動解析</p>
           </div>
           <div className="flex gap-2.5 items-start">
             <span className="w-4 h-4 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">3</span>
-            <p className="text-xs lg:text-sm text-gray-300 leading-snug">リアルタイム試聴＆キー・テンポ調整</p>
+            <p className="text-xs lg:text-sm text-gray-300 leading-snug">自分の声と一緒にコード試聴</p>
           </div>
         </div>
       </div>
@@ -259,8 +259,10 @@ export default function MusicApp() {
           <main className="flex-1 h-full overflow-hidden relative">
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/input-select" element={<InputSelectPage />} />
-              <Route path="/keyboard" element={<SimpleKeyboardInput />} />
+              {/* 旧鍵盤入力画面へのパスを新録音解析画面へ集約 */}
+              <Route path="/audio-input" element={<AudioInputPage />} />
+              <Route path="/keyboard" element={<AudioInputPage />} />
+              <Route path="/input-select" element={<AudioInputPage />} />
               <Route path="/preset-list" element={<PresetListPage />} />
               <Route path="/suggest" element={<ChordSuggestionPage />} />
               <Route path="/landing" element={<LandingPage />} />
